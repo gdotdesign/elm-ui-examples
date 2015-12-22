@@ -1,0 +1,3 @@
+[submodule "vendor/elm-ui"]
+	path = vendor/elm-ui
+	url = git@github.com:gdotdesign/elm-ui.git
