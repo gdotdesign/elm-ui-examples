@@ -1,1 +1,46 @@
 @import 'ui/ui';
+
+video-library-item {
+  @include colors($input);
+
+  box-shadow: 0px 1px 3px 0px rgba(0,0,0,0.1);
+  border-radius: $border-radius;
+  margin-bottom: 20px;
+  margin-right: 20px;
+
+  video-library-item-image {
+    background-color: $secondary;
+    padding-top: 52%;
+    display: block;
+  }
+
+  div {
+    padding: 10px;
+  }
+
+  @each $breakpoint, $num in (
+        2000px 5,
+        1600px 4,
+        1200px 3,
+        800px 2) {
+    @media (min-width: #{$breakpoint - 400px} )
+       and (max-width: #{$breakpoint - 1px}) {
+      width: calc((100% / #{$num}) - 20px);
+
+      &:nth-child(#{$num}n) {
+        margin-right: 0;
+      }
+    }
+  }
+
+  @media (max-width: 400px) {
+    margin-right: 0;
+    width: 100%;
+  }
+}
+
+video-library-folder {
+  padding: 15px;
+  display: flex;
+  flex-wrap: wrap;
+}

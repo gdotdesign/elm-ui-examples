@@ -14,6 +14,7 @@ type Item
 type alias Video =
   { url : String
   , image : String
+  , name : String
   }
 
 type alias Folder =
@@ -26,7 +27,7 @@ type alias Folder =
 lazy : (() -> Json.Decoder a) -> Json.Decoder a
 lazy thunk =
   Json.customDecoder Json.value
-      (\js -> Json.decodeValue (thunk ()) js)
+    (\js -> Json.decodeValue (thunk ()) js)
 
 itemDecoder : Json.Decoder Item
 itemDecoder =
@@ -37,9 +38,10 @@ itemDecoder =
 
 videoDecoder : Json.Decoder Video
 videoDecoder =
-  Json.object2 Video
+  Json.object3 Video
     ("url" := Json.string)
     ("image" := Json.string)
+    ("name" := Json.string)
 
 folderDecoder : Json.Decoder Folder
 folderDecoder =
@@ -49,6 +51,32 @@ folderDecoder =
 
 
 -- Functions
+itemName : Item -> String
+itemName item =
+  case item of
+    VideoNode video -> video.name
+    FolderNode folder -> folder.name
+
+firstFolder : List Item -> Maybe Folder
+firstFolder items =
+  let
+    first =
+      List.filter isFolder items
+      |> List.head
+  in
+    case first of
+      Nothing -> Nothing
+      Just item ->
+        case item of
+          FolderNode folder -> Just folder
+          VideoNode video -> Nothing
+
+isFolder : Item -> Bool
+isFolder item =
+  case item of
+    VideoNode video -> False
+    FolderNode folder -> True
+
 itemImage : Item -> String
 itemImage item =
   case item of

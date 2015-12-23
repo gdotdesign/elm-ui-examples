@@ -1,6 +1,7 @@
 [{
   "url": "test",
-  "image": "test"
+  "image": "test",
+  "name": "asd"
 }, {
   "name": "root",
   "items": [{
@@ -13,4 +14,16 @@
       }]
     }]
   }]
+},{
+  "url": "test",
+  "image": "test",
+  "name": "asd"
+},{
+  "url": "test",
+  "image": "test",
+  "name": "asd"
+},{
+  "url": "test",
+  "image": "test",
+  "name": "asd"
 }]

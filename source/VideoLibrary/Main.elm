@@ -6,9 +6,12 @@ import Signal exposing (forwardTo)
 import Task
 import Http
 
-import Html
+import Html.Attributes exposing (style)
+import Html.Events exposing (onClick)
+import Html exposing (node, text)
 
 import Ui.App
+import Ui
 
 import Debug exposing (log)
 
@@ -18,32 +21,58 @@ import VideoLibrary.Types exposing (..)
 type alias Model =
   { app: Ui.App.Model
   , items: List Item
+  , folder: Maybe Folder
   }
 
 type Action
   = App Ui.App.Action
   | Loaded (Maybe (List Item))
+  | Select Folder
 
 init : Model
 init =
   { app = Ui.App.init "Video Library"
+  , folder = Nothing
   , items = []
   }
 
+renderItem : Signal.Address Action -> Item -> Html.Html
+renderItem address item =
+  let
+    action =
+      case item of
+        VideoNode video -> []
+        FolderNode folder -> [onClick address (Select folder)]
+  in
+    node "video-library-item" action
+      [ node "video-library-item-image" [style [("background-image", "url(" ++ (itemImage item) ++ ")")]] []
+      , node "div" [] [text (itemName item)]
+      ]
+
 view: Signal.Address Action -> Model -> Html.Html
 view address model =
-  Ui.App.view (forwardTo address App) model.app
-    []
+  let
+    items =
+      case model.folder of
+        Just folder -> List.map (\item -> renderItem address item) folder.items
+        _ -> []
+  in
+    Ui.App.view (forwardTo address App) model.app
+      [ node "video-library-folder" [] items ]
 
 update: Action -> Model -> Model
 update action model =
   case action of
     App act ->
       { model | app = Ui.App.update act model.app }
+    Select folder ->
+      { model | folder = Just folder }
     Loaded (Just items)->
-      { model | items = log "a" items }
+      { model | items = log "a" items
+              , folder = Just { name = "ROOT", items = items } }
     Loaded Nothing ->
-      { model | items = log "a" [] }
+      { model | items = log "a" []
+              , folder = Nothing }
 
 fxNone : Model -> (Model, Effects.Effects action)
 fxNone model =
