@@ -15,11 +15,13 @@ type alias Video =
   { url : String
   , image : String
   , name : String
+  , id : String
   }
 
 type alias Folder =
   { name : String
   , items : List Item
+  , id : String
   }
 
 -- Decoders
@@ -38,16 +40,18 @@ itemDecoder =
 
 videoDecoder : Json.Decoder Video
 videoDecoder =
-  Json.object3 Video
-    ("url" := Json.string)
-    ("image" := Json.string)
-    ("name" := Json.string)
+  Json.succeed Video
+    |: ("url" := Json.string)
+    |: ("image" := Json.string)
+    |: ("name" := Json.string)
+    |: ("id" := Json.string)
 
 folderDecoder : Json.Decoder Folder
 folderDecoder =
-  Json.object2 Folder
-    ("name" := Json.string)
-    ("items" := Json.list itemDecoder)
+  Json.succeed Folder
+    |: ("name" := Json.string)
+    |: ("items" := Json.list itemDecoder)
+    |: ("id" := Json.string)
 
 
 -- Functions

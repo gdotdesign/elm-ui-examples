@@ -5,6 +5,7 @@ import Effects
 import Signal exposing (forwardTo)
 import Task
 import Http
+import Hop
 
 import Html.Attributes exposing (style)
 import Html.Events exposing (onClick)
@@ -28,6 +29,22 @@ type Action
   = App Ui.App.Action
   | Loaded (Maybe (List Item))
   | Select Folder
+  | HopAction Hop.Action
+  | ShowRoot Hop.Payload
+  | ShowFolder Hop.Payload
+
+routes : List (String, Hop.Payload -> Action)
+routes =
+  [ ("/", ShowRoot)
+  ,  ("/folder/:id", ShowFolder)
+  ]
+
+router : Hop.Router Action
+router =
+  Hop.new
+    { routes = routes
+    , notFoundAction = ShowRoot
+    }
 
 init : Model
 init =
@@ -69,10 +86,11 @@ update action model =
       { model | folder = Just folder }
     Loaded (Just items)->
       { model | items = log "a" items
-              , folder = Just { name = "ROOT", items = items } }
+              , folder = Just { name = "ROOT", items = items, id = "root" } }
     Loaded Nothing ->
       { model | items = log "a" []
               , folder = Nothing }
+    _ -> model
 
 fxNone : Model -> (Model, Effects.Effects action)
 fxNone model =
@@ -82,7 +100,7 @@ app =
   StartApp.start { init = (log "init" init, fetchData Loaded)
                  , view = view
                  , update = (\action model -> fxNone (update action model))
-                 , inputs = [] }
+                 , inputs = [router.signal] }
 
 main =
   app.html

@@ -1,15 +1,20 @@
 [{
   "url": "test",
   "image": "test",
-  "name": "asd"
+  "name": "asd",
+  "id": "01"
 }, {
   "name": "root",
+  "id": "02",
   "items": [{
     "name": "root",
+    "id": "03",
     "items": [{
       "name": "root",
+      "id": "04",
       "items": [{
         "name": "root",
+        "id": "05",
         "items": []
       }]
     }]
@@ -17,13 +22,16 @@
 },{
   "url": "test",
   "image": "test",
+  "id": "06",
   "name": "asd"
 },{
   "url": "test",
   "image": "test",
+  "id": "07",
   "name": "asd"
 },{
   "url": "test",
   "image": "test",
+  "id": "08",
   "name": "asd"
 }]
