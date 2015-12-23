@@ -65,7 +65,7 @@ router.get('/:id', function *(next) {
 
 router.get('/:id/main.js', function *(next) {
   this.type = 'text/javascript';
-  this.body = yield renderElm('source/MoneyTrack/Main.elm')
+  this.body = yield renderElm(`source/${this.params.id}/Main.elm`)
 })
 
 router.get('/:id/main.css', function *(next) {
@@ -74,8 +74,8 @@ router.get('/:id/main.css', function *(next) {
 })
 
 app
+  .use(serve('./public'))
   .use(router.routes())
-  .use(serve('./public'));
 
 app.listen(8001);
 

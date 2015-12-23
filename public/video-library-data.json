@@ -1,0 +1,16 @@
+[{
+  "url": "test",
+  "image": "test"
+}, {
+  "name": "root",
+  "items": [{
+    "name": "root",
+    "items": [{
+      "name": "root",
+      "items": [{
+        "name": "root",
+        "items": []
+      }]
+    }]
+  }]
+}]
