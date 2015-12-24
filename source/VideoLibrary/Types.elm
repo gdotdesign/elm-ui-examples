@@ -61,19 +61,41 @@ itemName item =
     VideoNode video -> video.name
     FolderNode folder -> folder.name
 
+findFolderById :  String -> List Item -> Maybe Folder
+findFolderById id items =
+  List.map flatten items
+    |> List.foldl (++) []
+    |> List.filter (\item -> testId id item)
+    |> List.head
+    |> asFolder
+
+testId : String -> Item -> Bool
+testId id item =
+  case item of
+    FolderNode folder -> folder.id == id
+    VideoNode video -> video.id == id
+
+flatten : Item -> List Item
+flatten item =
+  case item of
+    FolderNode folder -> [FolderNode folder] ++ (List.map flatten folder.items
+                                      |> List.foldl (++) [])
+    VideoNode video -> [VideoNode video]
+
 firstFolder : List Item -> Maybe Folder
 firstFolder items =
-  let
-    first =
-      List.filter isFolder items
-      |> List.head
-  in
-    case first of
-      Nothing -> Nothing
-      Just item ->
-        case item of
-          FolderNode folder -> Just folder
-          VideoNode video -> Nothing
+  List.filter isFolder items
+    |> List.head
+    |> asFolder
+
+asFolder : Maybe Item -> Maybe Folder
+asFolder item =
+  case item of
+    Nothing -> Nothing
+    Just item ->
+      case item of
+        FolderNode folder -> Just folder
+        VideoNode video -> Nothing
 
 isFolder : Item -> Bool
 isFolder item =
