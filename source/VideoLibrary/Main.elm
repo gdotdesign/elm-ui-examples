@@ -80,16 +80,16 @@ renderItem address item =
       [ onClick address (NavigateTo url)
       , classList [(kind, True)]
       ]
-      [ node "video-library-item-image" [style [("background-image", "url(" ++ (itemImage item) ++ ")")]] []
+      [ node "video-library-item-image" [style [("background-image", "url(\"" ++ (itemImage item) ++ "\")")]] []
       , node "div" [] [text (itemName item)]
       ]
 
 view: Signal.Address Action -> Model -> Html.Html
 view address model =
   let
-    path folder =
-      if folder.id == "" then []
-      else [(folder.name, NavigateTo ("/folder/" ++ folder.id))]
+    path item =
+      if item.id == "" then []
+      else [(item.name, NavigateTo ("/item/" ++ item.id))]
 
     (child, breadcrumbItems, isVideo) =
       case model.item of
@@ -97,7 +97,7 @@ view address model =
           case item of
             VideoNode video ->
               (node "video-library-video" []
-                [node "video" [src video.url, controls True] []],[],True)
+                [node "video" [src video.url, controls True] []],path video,True)
             FolderNode folder ->
               (node "video-library-folder" []
                 (List.map (\item -> renderItem address item) folder.items), path folder, False)
@@ -110,7 +110,7 @@ view address model =
                               , compact = True } []
               [ Ui.header []
                 [ Ui.headerTitle [] [text "My Video Library"]]
-              , breadcrumbs address (node "span" [] [text "/"]) ([("Root", NavigateTo "")] ++ breadcrumbItems)
+              , breadcrumbs address (node "span" [] [text "/"]) ([("Library", NavigateTo "")] ++ breadcrumbItems)
               , child
               ]
         ]
