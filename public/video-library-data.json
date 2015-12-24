@@ -1,7 +1,7 @@
 [{
-  "url": "test",
-  "image": "test",
-  "name": "asd",
+  "url": "/videos/video.mp4",
+  "image": "/images/big_buck_bunny.jpg",
+  "name": "Castle",
   "id": "01"
 }, {
   "name": "root",

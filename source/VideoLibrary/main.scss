@@ -1,5 +1,23 @@
 @import 'ui/ui';
 
+ui-breadcrumbs {
+  background: $secondary;
+  padding: 15px;
+
+  ui-breadcrumb {
+    font-weight: 600;
+
+    &:hover {
+      cursor: pointer;
+      color: $focus;
+    }
+
+    + :not(ui-breadcrumb) {
+      margin: 0 5px;
+    }
+  }
+}
+
 video-library-item {
   @include colors($input);
 
@@ -10,8 +28,11 @@ video-library-item {
 
   video-library-item-image {
     background-color: $secondary;
-    padding-top: 52%;
+    background-position: center;
+    background-size: cover;
+    padding-top: 135%;
     display: block;
+    border-radius: $border-radius $border-radius 0 0;
   }
 
   div {
@@ -19,13 +40,13 @@ video-library-item {
   }
 
   @each $breakpoint, $num in (
-        2000px 5,
-        1600px 4,
-        1200px 3,
+        2000px 6,
+        1600px 5,
+        1200px 4,
         800px 2) {
     @media (min-width: #{$breakpoint - 400px} )
        and (max-width: #{$breakpoint - 1px}) {
-      width: calc((100% / #{$num}) - 20px);
+      width: calc((100% / #{$num}) - #{($num - 1) * 20px / $num});
 
       &:nth-child(#{$num}n) {
         margin-right: 0;
@@ -39,8 +60,55 @@ video-library-item {
   }
 }
 
+video-library {
+  height: 100vh;
+  width: 100vw;
+
+  > ui-container {
+    height: 100vh;
+  }
+
+  ui-breadcrumbs, ui-header {
+    padding-left: 30px;
+  }
+
+  ui-header-title:first-child {
+    padding-left: 0;
+  }
+
+  &.video {
+    ui-breadcrumbs {
+      @include colors(#222);
+    }
+
+    ui-header {
+      @include colors(#333);
+      border-bottom: 0;
+    }
+  }
+}
+
+video-library-video {
+  position: relative;
+  background: black;
+  flex: 1;
+
+  video {
+    position: absolute;
+    width: 100%;
+    height: calc(100% - 20px);
+    top: 0;
+    left: 0;
+  }
+}
+
 video-library-folder {
-  padding: 15px;
+  padding: 30px;
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
+  flex: 1;
+
+  overflow: auto;
 }

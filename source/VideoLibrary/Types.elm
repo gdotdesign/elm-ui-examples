@@ -61,13 +61,12 @@ itemName item =
     VideoNode video -> video.name
     FolderNode folder -> folder.name
 
-findFolderById :  String -> List Item -> Maybe Folder
-findFolderById id items =
+findItemByID :  String -> List Item -> Maybe Item
+findItemByID id items =
   List.map flatten items
     |> List.foldl (++) []
     |> List.filter (\item -> testId id item)
     |> List.head
-    |> asFolder
 
 testId : String -> Item -> Bool
 testId id item =
@@ -79,7 +78,7 @@ flatten : Item -> List Item
 flatten item =
   case item of
     FolderNode folder -> [FolderNode folder] ++ (List.map flatten folder.items
-                                      |> List.foldl (++) [])
+                                                 |> List.foldl (++) [])
     VideoNode video -> [VideoNode video]
 
 firstFolder : List Item -> Maybe Folder
