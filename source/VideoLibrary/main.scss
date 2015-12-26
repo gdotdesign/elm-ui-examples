@@ -14,7 +14,7 @@ ui-breadcrumbs {
     }
 
     + :not(ui-breadcrumb) {
-      margin: 0 5px;
+      margin: 0 7px;
     }
   }
 }
@@ -108,17 +108,6 @@ video-library {
 
   ui-header-title:first-child {
     padding-left: 0;
-  }
-
-  &.video {
-    ui-breadcrumbs {
-      @include colors(#222);
-    }
-
-    ui-header {
-      @include colors(#333);
-      border-bottom: 0;
-    }
   }
 }
 

@@ -88,8 +88,8 @@ view: Signal.Address Action -> Model -> Html.Html
 view address model =
   let
     path item =
-      if item.id == "" then []
-      else [(item.name, NavigateTo ("/item/" ++ item.id))]
+      ((itemPath item.id [] (rootNode model)) ++ [(item.name, item.id)])
+      |> List.map (\(name, id) -> (name, NavigateTo ("/item/" ++ id)))
 
     (child, breadcrumbItems, isVideo) =
       case model.item of
@@ -110,7 +110,7 @@ view address model =
                               , compact = True } []
               [ Ui.header []
                 [ Ui.headerTitle [] [text "My Video Library"]]
-              , breadcrumbs address (node "span" [] [text "/"]) ([("Library", NavigateTo "")] ++ breadcrumbItems)
+              , breadcrumbs address (node "span" [] [text "/"]) breadcrumbItems
               , child
               ]
         ]
@@ -144,9 +144,13 @@ update action model =
         |> fxNone
     _ -> fxNone model
 
+rootNode : Model -> Folder
+rootNode model =
+  { name = "Library", items = model.items, id = "" }
+
 showRoot : Model -> (Model, Effects.Effects Action)
 showRoot model =
-  { model | item = Just (FolderNode { name = "ROOT", items = model.items, id = "" }) }
+  { model | item = Just (FolderNode (rootNode model)) }
     |> fxNone
 
 fxNone : Model -> (Model, Effects.Effects action)

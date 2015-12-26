@@ -3,9 +3,12 @@ module VideoLibrary.Types where
 import Json.Decode.Extra exposing ((|:))
 import Json.Decode as Json exposing ((:=))
 
+import Maybe.Extra exposing (isJust)
 import Effects
 import Task
 import Http
+
+import Debug exposing (log)
 
 type Item
   = FolderNode Folder
@@ -53,13 +56,45 @@ folderDecoder =
     |: ("items" := Json.list itemDecoder)
     |: ("id" := Json.string)
 
-
 -- Functions
 itemName : Item -> String
 itemName item =
   case item of
     VideoNode video -> video.name
     FolderNode folder -> folder.name
+
+itemPath : String -> List (String, String) -> Folder -> List (String, String)
+itemPath id path folder =
+  let
+    inFolder = hasItem id folder
+    inSubFolder = hasItemRecursive id folder
+  in
+    if inFolder then
+      path ++ [(folder.name, folder.id)]
+    else if inSubFolder then
+      case folderOf id folder of
+        Just subfolder -> itemPath id (path ++ [(folder.name, folder.id)]) subfolder
+        Nothing -> path
+    else
+      path
+
+folderOf : String -> Folder -> Maybe Folder
+folderOf id folder =
+  List.map asFolder folder.items
+    |> List.filter (\mf -> Maybe.withDefault False (Maybe.map (\item -> hasItemRecursive id item) mf))
+    |> List.head
+    |> Maybe.Extra.join
+
+hasItemRecursive : String -> Folder -> Bool
+hasItemRecursive id folder =
+  flatten (FolderNode folder)
+    |> List.map (\item -> testId id item)
+    |> List.member True
+
+hasItem : String -> Folder -> Bool
+hasItem id folder =
+  List.map (\item -> testId id item) folder.items
+    |> List.member True
 
 findItemByID :  String -> List Item -> Maybe Item
 findItemByID id items =
@@ -77,24 +112,28 @@ testId id item =
 flatten : Item -> List Item
 flatten item =
   case item of
-    FolderNode folder -> [FolderNode folder] ++ (List.map flatten folder.items
-                                                 |> List.foldl (++) [])
+    FolderNode folder ->
+      [FolderNode folder] ++ (List.map flatten folder.items
+                               |> List.foldl (++) [])
     VideoNode video -> [VideoNode video]
 
 firstFolder : List Item -> Maybe Folder
 firstFolder items =
   List.filter isFolder items
     |> List.head
-    |> asFolder
+    |> maybeAsFolder
 
-asFolder : Maybe Item -> Maybe Folder
-asFolder item =
+maybeAsFolder : Maybe Item -> Maybe Folder
+maybeAsFolder item =
   case item of
     Nothing -> Nothing
-    Just item ->
-      case item of
-        FolderNode folder -> Just folder
-        VideoNode video -> Nothing
+    Just item -> asFolder item
+
+asFolder : Item -> Maybe Folder
+asFolder item =
+  case item of
+    FolderNode folder -> Just folder
+    VideoNode video -> Nothing
 
 isFolder : Item -> Bool
 isFolder item =
@@ -113,6 +152,7 @@ folderImage folder =
   Maybe.map itemImage (List.head folder.items)
     |> Maybe.withDefault ""
 
+-- Queries
 fetchData : (Maybe (List Item) -> a) -> Effects.Effects a
 fetchData action =
   Http.get (Json.list itemDecoder) "/video-library-data.json"
