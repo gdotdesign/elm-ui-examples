@@ -63,17 +63,17 @@ itemName item =
     VideoNode video -> video.name
     FolderNode folder -> folder.name
 
-itemPath : String -> List (String, String) -> Folder -> List (String, String)
+itemPath : String -> List (Folder) -> Folder -> List (Folder)
 itemPath id path folder =
   let
     inFolder = hasItem id folder
     inSubFolder = hasItemRecursive id folder
   in
     if inFolder then
-      path ++ [(folder.name, folder.id)]
+      path ++ [folder]
     else if inSubFolder then
       case folderOf id folder of
-        Just subfolder -> itemPath id (path ++ [(folder.name, folder.id)]) subfolder
+        Just subfolder -> itemPath id (path ++ [folder]) subfolder
         Nothing -> path
     else
       path
@@ -125,15 +125,25 @@ firstFolder items =
 
 maybeAsFolder : Maybe Item -> Maybe Folder
 maybeAsFolder item =
-  case item of
-    Nothing -> Nothing
-    Just item -> asFolder item
+  Maybe.map asFolder item
+    |> Maybe.Extra.join
+
+maybeAsVideo : Maybe Item -> Maybe Video
+maybeAsVideo item =
+  Maybe.map asVideo item
+    |> Maybe.Extra.join
 
 asFolder : Item -> Maybe Folder
 asFolder item =
   case item of
     FolderNode folder -> Just folder
     VideoNode video -> Nothing
+
+asVideo : Item -> Maybe Video
+asVideo item =
+  case item of
+    FolderNode folder -> Nothing
+    VideoNode video -> Just video
 
 isFolder : Item -> Bool
 isFolder item =
