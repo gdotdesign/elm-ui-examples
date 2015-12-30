@@ -113,19 +113,31 @@ video-library {
 
 video-library-video {
   justify-content: center;
-  align-items: center;
+  flex-direction:  column;
   position: fixed;
-  background: $background;
+  background: black;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   display: flex;
   flex: 1;
+  padding: 30px;
+
+  ui-container {
+    color: #DDD;
+    padding-bottom: 30px;
+    text-align: center;
+    font-size: 26px;
+    border-bottom: 1px solid rgba(#FFF, 0.15);
+
+    strong {
+      flex: 1;
+    }
+  }
 
   video {
-    border-radius: $border-radius;
-    border: 5px solid rgba(0,0,0,0.2);
+    flex: 1;
     max-width: 100%;
     max-height: 100%;
   }

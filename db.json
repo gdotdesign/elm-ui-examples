@@ -1,0 +1,33 @@
+{
+  "videos": [
+    {
+      "url": "/videos/video.mp4",
+      "image": "/images/big_buck_bunny.jpg",
+      "name": "Bick Buck Bunny",
+      "id": "01",
+      "folderId": ""
+    }
+  ],
+  "folders": [
+    {
+      "name": "Folder 1",
+      "id": "02",
+      "folderId": ""
+    },
+    {
+      "name": "Folder 2",
+      "id": "03",
+      "folderId": "02"
+    },
+    {
+      "name": "Folder 3",
+      "id": "04",
+      "folderId": "03"
+    },
+    {
+      "name": "Folder 4",
+      "id": "05",
+      "folderId": "04"
+    }
+  ]
+}

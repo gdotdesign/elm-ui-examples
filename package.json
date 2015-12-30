@@ -30,7 +30,8 @@
     "gulp-file": "0.2.0",
     "gulp-sass": "2.1.1",
     "gulp-elm": "0.2.0",
-    "gulp": "3.9.0"
+    "gulp": "3.9.0",
+    "json-server": "0.8.4"
   },
   "homepage": "https://github.com/gdotdesign/elm-ui#readme"
 }

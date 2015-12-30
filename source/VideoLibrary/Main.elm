@@ -24,7 +24,7 @@ import VideoLibrary.Types exposing (..)
 -- Main entry point
 type alias Model =
   { app: Ui.App.Model
-  , items: List Item
+  , repository: Repository
   , folder: Maybe Folder
   , video: Maybe Video
   , routerPayload : Hop.Payload
@@ -44,7 +44,7 @@ init =
   , routerPayload = router.payload
   , folder = Nothing
   , video = Nothing
-  , items = []
+  , repository = initRepository [] []
   }
 
 routes : List (String, Hop.Payload -> Action)
@@ -58,6 +58,7 @@ router =
     , notFoundAction = HandleChange
     }
 
+{-
 breadcrumbs : Signal.Address a -> Html.Html -> List (String, a) -> Html.Html
 breadcrumbs address separator items =
   let
@@ -68,36 +69,36 @@ breadcrumbs address separator items =
     node "ui-breadcrumbs" []
       (List.map renderItem items
       |> List.intersperse separator)
+-}
 
 createQuery : Model -> Dict.Dict String String
 createQuery model =
   let
     folder =
-      Maybe.map (\item -> [("folderId", item.id)]) model.folder
+      Maybe.map (\item -> [("folderId", item)]) model.folder
         |> Maybe.withDefault []
     video =
-      Maybe.map (\item -> [("videoId", item.id)]) model.video
+      Maybe.map (\item -> [("videoId", item)]) model.video
         |> Maybe.withDefault []
   in
     Dict.fromList (folder ++ video)
 
-renderItem : Signal.Address Action -> Model -> Item -> Html.Html
-renderItem address model item =
+{-
+renderItem : Signal.Address Action -> Model -> VideoLibrary.Model -> Html.Html
+renderItem address base model =
   let
-    (query, kind) =
-      case item of
+    query =
+      case model.item of
         VideoNode video ->
-          (createQuery { model | video = Just video }, "video")
+          createQuery { base | video = Just video }
         FolderNode folder ->
-          (createQuery { model | folder = Just folder }, "folder")
+          createQuery { base | folder = Just folder }
   in
-    node "video-library-item"
-      [ onClick address (NavigateTo query)
-      , classList [(kind, True)]
-      ]
-      [ node "video-library-item-image" [style [("background-image", "url(\"" ++ (itemImage item) ++ "\")")]] []
-      , node "div" [] [text (itemName item)]
-      ]
+    VideoLibrary.Item.view
+      (forwardTo address (XY item.id))
+      { onClick = onClick address (NavigateTo query) }
+      model
+-}
 
 view: Signal.Address Action -> Model -> Html.Html
 view address model =
@@ -117,7 +118,12 @@ view address model =
       case model.video of
         Just video ->
           node "video-library-video" []
-            [node "video" [src video.url, controls True] []]
+            [ Ui.Container.row []
+              [ Ui.icon "android-film" False []
+              , node "strong" [] [text video.name]
+              , Ui.icon "close" True [onClick address (EscIsDown True)]
+              ]
+            , node "video" [src video.url, controls True] []]
         Nothing -> text ""
   in
     Ui.App.view (forwardTo address App) model.app
@@ -193,7 +199,7 @@ fxNone model =
   (model, Effects.none)
 
 app =
-  StartApp.start { init = (log "init" init, fetchData Loaded)
+  StartApp.start { init = (log "init" init, Effects.batch (fetchData Loaded))
                  , view = view
                  , update = update
                  , inputs = [ Signal.dropRepeats router.signal
