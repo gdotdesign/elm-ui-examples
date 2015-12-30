@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node server.js",
     "deploy": "gulp deploy",
-    "build": "gulp build"
+    "build": "gulp build",
+    "elm-install": "elm-package install -y"
   },
   "repository": {
     "type": "git",
@@ -31,7 +32,8 @@
     "gulp-sass": "2.1.1",
     "gulp-elm": "0.2.0",
     "gulp": "3.9.0",
-    "json-server": "0.8.4"
+    "json-server": "0.8.4",
+    "elm": "0.16.0"
   },
   "homepage": "https://github.com/gdotdesign/elm-ui#readme"
 }

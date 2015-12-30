@@ -16,4 +16,6 @@ repository =
   , foldersAndFolders = Association.init .folderId folders folders
   }
 
+folder = Association.parentOf "2" repository.foldersAndFolders
+
 main = text (toString folder)

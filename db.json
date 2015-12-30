@@ -11,21 +11,25 @@
   "folders": [
     {
       "name": "Folder 1",
+      "image": "/images/big_buck_bunny.jpg",
       "id": "02",
       "folderId": ""
     },
     {
       "name": "Folder 2",
+      "image": "",
       "id": "03",
       "folderId": "02"
     },
     {
       "name": "Folder 3",
+      "image": "",
       "id": "04",
       "folderId": "03"
     },
     {
       "name": "Folder 4",
+      "image": "",
       "id": "05",
       "folderId": "04"
     }
