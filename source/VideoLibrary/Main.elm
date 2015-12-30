@@ -14,6 +14,7 @@ import Html.Attributes exposing (style, src, controls, classList)
 import Html.Events exposing (onClick)
 import Html exposing (node, text)
 
+import Ui.DropdownMenu
 import Ui.Container
 import Ui.App
 import Ui
@@ -30,6 +31,7 @@ type alias Model =
   , videos : List FolderComponent.Model
   , video: Maybe Video
   , routerPayload : Hop.Payload
+  , fabMenu: Ui.DropdownMenu.Model
   }
 
 type Action
@@ -45,6 +47,7 @@ type Action
   | FolderAction String FolderComponent.Action
   | VideoAction String FolderComponent.Action
   | App Ui.App.Action
+  | FabMenu Ui.DropdownMenu.Action
   -- Lifecycle
   | MouseIsDown Bool
   | EscIsDown Bool
@@ -52,12 +55,20 @@ type Action
 
 init : Model
 init =
-  { app = Ui.App.init "Video Library"
-  , routerPayload = router.payload
-  , video = Nothing
-  , folders = []
-  , videos = []
-  }
+  let
+    fabMenu = Ui.DropdownMenu.init
+  in
+    { app = Ui.App.init "Video Library"
+    , routerPayload = router.payload
+    , video = Nothing
+    , folders = []
+    , videos = []
+    , fabMenu = { fabMenu | offsetY = 10
+                          , favoredSides = { horizontal = "left"
+                                           , vertical = "top"
+                                           }
+                }
+    }
 
 routes : List (String, Hop.Payload -> Action)
 routes =
@@ -96,7 +107,7 @@ renderVideo address base model =
       (forwardTo address (VideoAction model.id))
       { onClick = onClick address (NavigateTo query)
       , onDelete = onClick address NoOp
-      , onOpen = onClick address NoOp
+      , onEdit = onClick address NoOp
       }
       model
 
@@ -108,7 +119,7 @@ renderFolder address base model =
       (forwardTo address (FolderAction model.id))
       { onClick = onClick address (NavigateTo query)
       , onDelete = onClick address NoOp
-      , onOpen = onClick address NoOp
+      , onEdit = onClick address NoOp
       }
       model
 
@@ -142,6 +153,13 @@ view address model =
               ]
         ]
       , videoPlayer
+      , Ui.DropdownMenu.view
+        (forwardTo address FabMenu)
+        (Ui.fab "plus" [])
+        [ FolderComponent.menuItem "android-film" "Add Video" (onClick address NoOp)
+        , FolderComponent.menuItem "folder" "Add Folder" (onClick address NoOp)
+        ]
+        model.fabMenu
       ]
 
 getParam : String -> Hop.Payload -> String
@@ -162,6 +180,9 @@ update action model =
       (model, Effects.map HopAction (Hop.addQuery model.routerPayload.url query))
     App act ->
       { model | app = Ui.App.update act model.app }
+        |> fxNone
+    FabMenu act ->
+      { model | fabMenu = Ui.DropdownMenu.update act model.fabMenu }
         |> fxNone
     HandleChange payload ->
       let
@@ -187,10 +208,10 @@ update action model =
       { model | video = Just video }
         |> fxNone
     VideosLoaded (Ok videos) ->
-      { model | videos = List.map FolderComponent.init videos }
+      { model | videos = List.map (\item -> FolderComponent.init item "video") videos }
         |> fxNone
     FoldersLoaded (Ok folders) ->
-      { model | folders = List.map FolderComponent.init folders }
+      { model | folders = List.map (\item -> FolderComponent.init item "folder") folders }
         |> fxNone
     MouseIsDown pressed ->
       let
@@ -198,7 +219,8 @@ update action model =
           FolderComponent.handleClick pressed view
       in
         { model | folders = List.map updatedItems model.folders
-                , videos = List.map updatedItems model.videos }
+                , videos = List.map updatedItems model.videos
+                , fabMenu = Ui.DropdownMenu.handleClick pressed model.fabMenu }
         |> fxNone
 
     FolderAction id act ->

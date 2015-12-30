@@ -20,12 +20,10 @@ ui-breadcrumbs {
 }
 
 video-library-item {
-  @include colors($input);
-
-  box-shadow: 0px 1px 3px 0px rgba(0,0,0,0.1);
   border-radius: $border-radius;
   margin-bottom: 20px;
   margin-right: 20px;
+  position: relative;
 
   video-library-item-image {
     background-color: $secondary;
@@ -35,6 +33,54 @@ video-library-item {
     padding-top: 135%;
     display: block;
     border-radius: $border-radius $border-radius 0 0;
+    box-shadow: 0px 1px 3px 0px rgba(0,0,0,0.1);
+    z-index: 1;
+  }
+
+  &.folder {
+    video-library-item-image {
+      margin: 0 24px;
+    }
+
+    ui-container {
+      border-radius: $border-radius;
+      &:before {
+        content: "";
+        position: absolute;
+        top: -100px;
+        left: 10px;
+        right: 10px;
+        height: 100px;
+        background: linear-gradient(rgba(#000,0), rgba(#000,0.2));
+        pointer-events: none;
+      }
+    }
+
+    &:before {
+      background: dampen($secondary, 20%);
+
+      border-radius: $border-radius $border-radius 0 0;
+      box-shadow: 0px 1px 3px 0px rgba(0,0,0,0.1);
+      content: "";
+      position: absolute;
+      top: 40px;
+      left: 10px;
+      right: 10px;
+      bottom: 30px;
+    }
+
+    &:after {
+      background: dampen($secondary, 10%);
+
+      border-radius: $border-radius $border-radius 0 0;
+      box-shadow: 0px 1px 3px 0px rgba(0,0,0,0.1);
+      content: "";
+      position: absolute;
+      top: 25px;
+      left: 17px;
+      right: 17px;
+      bottom: 30px;
+    }
   }
 
   &:hover {
@@ -66,11 +112,38 @@ video-library-item {
     }
   }
 
-  div {
+  ui-container {
+    @include colors($input);
+
+    background: linear-gradient(#FFF, $input);
     border-radius: 0 0 $border-radius $border-radius;
+    border-top: 1px solid rgba(#000, 0.05);
+    box-shadow: 0px 1px 3px 0px rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 2;
+  }
+
+  div {
     font-weight: 600;
     font-size: 18px;
     padding: 15px;
+    flex: 1;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  ui-dropdown-menu {
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    height: 54px;
+    width: 54px;
+
+    > ui-icon {
+      font-size: 32px;
+    }
   }
 
   @each $breakpoint, $num in (
@@ -123,6 +196,7 @@ video-library-video {
   display: flex;
   flex: 1;
   padding: 30px;
+  z-index: 200;
 
   ui-container {
     color: #DDD;
@@ -151,4 +225,12 @@ video-library-folder {
   flex: 1;
 
   overflow: auto;
+}
+
+ui-fab {
+  z-index: 100;
+}
+
+ui-dropdown-menu-items {
+  z-index: 100;
 }

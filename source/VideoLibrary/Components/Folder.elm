@@ -15,13 +15,14 @@ type alias Model =
   { menu : DropdownMenu.Model
   , image : String
   , name : String
+  , kind : String
   , id : String
   }
 
 type alias ViewModel =
   { onClick : Html.Attribute
   , onDelete : Html.Attribute
-  , onOpen : Html.Attribute
+  , onEdit : Html.Attribute
   }
 
 type Action
@@ -33,8 +34,8 @@ update action model =
     Menu act ->
       { model | menu = DropdownMenu.update act model.menu }
 
-init : { a | id : String, name : String, image : String } -> Model
-init {id, name, image}  =
+init : { a | id : String, name : String, image : String } -> String -> Model
+init {id, name, image} kind =
   let
     menu = DropdownMenu.init
   in
@@ -43,6 +44,7 @@ init {id, name, image}  =
                                      }
              }
     , image = image
+    , kind = kind
     , name = name
     , id = id
     }
@@ -65,7 +67,7 @@ closeMenu model =
 view : Signal.Address Action -> ViewModel -> Model -> Html.Html
 view address viewModel model =
   node "video-library-item"
-    [ ]
+    [ classList [(model.kind, True)] ]
     [ node "video-library-item-image"
       [ viewModel.onClick
       , style [("background-image", "url(" ++ model.image ++ ")") ]
@@ -76,8 +78,9 @@ view address viewModel model =
         , DropdownMenu.view
           (forwardTo address Menu)
           (Ui.icon "android-more-horizontal" True [])
-          [ menuItem "trash-b" "Delete" viewModel.onDelete
-          , menuItem "android-open" "Open" viewModel.onOpen
+          [ menuItem "android-open" "Open" viewModel.onClick
+          , menuItem "edit" "Edit" viewModel.onEdit
+          , menuItem "trash-b" "Delete" viewModel.onDelete
           ]
           model.menu
         ]
