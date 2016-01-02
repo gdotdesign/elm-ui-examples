@@ -6,6 +6,27 @@
       "name": "Bick Buck Bunny",
       "id": "01",
       "folderId": ""
+    },
+    {
+      "name": "Avengers",
+      "image": "http://cdn3-www.superherohype.com/assets/uploads/gallery/the_avengers_4997/avengers_age_of_ultron_8175/10869325_591589580977275_2778898650041679518_o.jpg",
+      "id": "06",
+      "folderId": "",
+      "url": ""
+    },
+    {
+      "image": "asdasd",
+      "name": "Test Video #1",
+      "url": "asdasd",
+      "folderId": "",
+      "id": "a2861c58-3cf4-4926-8297-8530fb3fbe40"
+    },
+    {
+      "image": "http://www.gstatic.com/tv/thumb/movieposters/27997/p27997_p_v7_aa.jpg",
+      "name": "Final Fantasy - Spirits Within",
+      "url": "http://mirrorblender.top-ix.org/peach/bigbuckbunny_movies/big_buck_bunny_1080p_surround.avi",
+      "folderId": "02",
+      "id": "a29436e0-812e-4121-89a9-59bdb0532c4d"
     }
   ],
   "folders": [

@@ -86,3 +86,9 @@ encodeParams params =
 
 get url params decoder action =
   getRequest url params decoder action
+
+post url params decoder action =
+  request url "POST" params decoder action
+
+patch url params decoder action =
+  request url "PATCH" params decoder action

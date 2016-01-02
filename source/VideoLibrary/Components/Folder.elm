@@ -74,7 +74,7 @@ view address viewModel model =
       ]
       [ ]
     , Ui.Container.row []
-        [ node "div" [] [text model.name]
+        [ node "div" [viewModel.onClick] [text model.name]
         , DropdownMenu.view
           (forwardTo address Menu)
           (Ui.icon "android-more-horizontal" True [])

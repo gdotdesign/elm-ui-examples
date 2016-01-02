@@ -69,3 +69,19 @@ fetchVideo id action =
     []
     videoDecoder
     action
+
+createVideo : List (String, J.Value) -> (Result String Video -> a) -> Effects.Effects a
+createVideo params action =
+  Rest.post
+    "http://localhost:8002/videos/"
+    params
+    videoDecoder
+    action
+
+patchVideo: String -> List (String, J.Value) -> (Result String Video -> a) -> Effects.Effects a
+patchVideo id params action =
+  Rest.patch
+    ("http://localhost:8002/videos/" ++ id)
+    params
+    videoDecoder
+    action
