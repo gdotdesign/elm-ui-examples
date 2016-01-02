@@ -323,7 +323,10 @@ update action model =
         if isDown then
           (model, Effects.map HopAction (Hop.addQuery model.routerPayload.url query))
         else
-          fxNone model
+          model
+          |> closeModals
+          |> closeDropdowns isDown
+          |> fxNone
     _ -> fxNone model
 
 closeDropdowns pressed model =
