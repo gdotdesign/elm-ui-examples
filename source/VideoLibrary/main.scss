@@ -83,32 +83,25 @@ video-library-item {
     }
   }
 
-  &:hover {
+  &.video video-library-item-image:hover {
+    filter: saturate(0);
     cursor: pointer;
 
-    > div {
-      @include colors($primary);
-    }
-
-    &.video video-library-item-image {
-      filter: saturate(0);
-
-      &:before {
-        content: "\f215";
-        font-family: Ionicons;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        font-size: 60px;
-        border-radius: inherit;
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(#000, 0.6);
-      }
+    &:before {
+      content: "\f215";
+      font-family: Ionicons;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 60px;
+      border-radius: inherit;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(#000, 0.6);
     }
   }
 
@@ -132,6 +125,11 @@ video-library-item {
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
+
+    &:hover {
+      cursor: pointer;
+      color: $focus;
+    }
   }
 
   ui-dropdown-menu {

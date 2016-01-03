@@ -11,6 +11,7 @@ import Keyboard
 import List.Extra
 import Json.Encode as J
 import Mouse
+import String
 
 import Html.Attributes exposing (style, src, controls, classList)
 import Html.Events exposing (onClick)
@@ -19,7 +20,6 @@ import Html exposing (node, text)
 import Ui.DropdownMenu
 import Ui.Container
 import Ui.Button
-import Ui.Modal
 import Ui.App
 import Ui
 
@@ -27,7 +27,8 @@ import Debug exposing (log)
 
 import VideoLibrary.Types exposing (..)
 import VideoLibrary.Components.Folder as FolderComponent
-import VideoLibrary.VideoForm as VideoForm
+import VideoLibrary.VideoModal as VideoModal
+import VideoLibrary.FolderModal as FolderModal
 
 -- Main entry point
 type alias Model =
@@ -37,8 +38,9 @@ type alias Model =
   , video: Maybe Video
   , routerPayload : Hop.Payload
   , fabMenu: Ui.DropdownMenu.Model
-  , modal: Ui.Modal.Model
-  , videoForm : VideoForm.Model
+  , videoModal: VideoModal.Model
+  , folderModal : FolderModal.Model
+  , folds : List Folder
   , vids : List Video
   }
 
@@ -48,22 +50,25 @@ type Action
   | VideosLoaded (Result String (List Video))
   | VideoLoaded (Result String Video)
   | VideoSaved (Result String Video)
+  | FolderSaved (Result String Folder)
   -- Navigation
   | NavigateTo (Dict.Dict String String)
   | HandleChange Hop.Payload
   | HopAction Hop.Action
   -- Components
-  | FolderAction String FolderComponent.Action
-  | VideoAction String FolderComponent.Action
+  | FolderAction Int FolderComponent.Action
+  | VideoAction Int FolderComponent.Action
   | FabMenu Ui.DropdownMenu.Action
-  | VideoForm VideoForm.Action
-  | Modal Ui.Modal.Action
+  | FolderModal FolderModal.Action
+  | VideoModal VideoModal.Action
   | App Ui.App.Action
   -- Lifecycle
+  | CreateOrPatchFolder
   | CreateOrPatchVideo
   | MouseIsDown Bool
   | EscIsDown Bool
-  | OpenModal (Maybe String)
+  | OpenVideoModal (Maybe Int)
+  | OpenFolderModal (Maybe Int)
   | NoOp
 
 init : Model
@@ -77,8 +82,9 @@ init =
     , folders = []
     , videos = []
     , vids = []
-    , modal = Ui.Modal.init
-    , videoForm = VideoForm.init
+    , folds = []
+    , videoModal = VideoModal.init
+    , folderModal = FolderModal.init
     , fabMenu = { fabMenu | offsetY = 10
                           , favoredSides = { horizontal = "left"
                                            , vertical = "top"
@@ -97,11 +103,11 @@ router =
     , notFoundAction = HandleChange
     }
 
-createQuery : Maybe String -> Maybe String -> Hop.Payload -> Dict.Dict String String
+createQuery : Maybe Int -> Maybe Int -> Hop.Payload -> Dict.Dict String String
 createQuery folderId videoId payload =
   Dict.fromList
-    [ ("folderId", Maybe.withDefault (getParam "folderId" payload) folderId)
-    , ("videoId", Maybe.withDefault (getParam "videoId" payload) videoId)
+    [ ("folderId", toString (Maybe.withDefault (getParam "folderId" payload) folderId))
+    , ("videoId", toString (Maybe.withDefault (getParam "videoId" payload) videoId))
     ]
 
 breadcrumbs : Signal.Address a -> Html.Html -> List (String, a) -> Html.Html
@@ -123,7 +129,7 @@ renderVideo address base model =
       (forwardTo address (VideoAction model.id))
       { onClick = onClick address (NavigateTo query)
       , onDelete = onClick address NoOp
-      , onEdit = onClick address (OpenModal (Just model.id))
+      , onEdit = onClick address (OpenVideoModal (Just model.id))
       }
       model
 
@@ -135,7 +141,7 @@ renderFolder address base model =
       (forwardTo address (FolderAction model.id))
       { onClick = onClick address (NavigateTo query)
       , onDelete = onClick address NoOp
-      , onEdit = onClick address NoOp
+      , onEdit = onClick address (OpenFolderModal (Just model.id))
       }
       model
 
@@ -152,26 +158,17 @@ view address model =
               ]
             , node "video" [src video.url, controls True] []]
         Nothing -> text ""
-    buttonText = if VideoForm.isNew model.videoForm then "Add" else "Save"
   in
     Ui.App.view (forwardTo address App) model.app
-      [ Ui.Modal.view
-          (forwardTo address Modal)
-          { content = [VideoForm.view (forwardTo address VideoForm) model.videoForm]
-          , footer = [ Ui.Container.rowEnd []
-                       [ Ui.Button.view
-                           address
-                           CreateOrPatchVideo
-                           { kind = "primary"
-                           , size = "medium"
-                           , disabled = not (VideoForm.isValid model.videoForm)
-                           , text = buttonText
-                           }
-                       ]
-                      ]
-          , title = if VideoForm.isNew model.videoForm then "Add Video" else "Edit Video"
+      [ VideoModal.view (forwardTo address VideoModal)
+          { address = address
+          , action = CreateOrPatchVideo
           }
-          model.modal
+          model.videoModal
+      , FolderModal.view (forwardTo address FolderModal)
+          { address = address
+          , action = CreateOrPatchFolder }
+          model.folderModal
       , node "video-library" []
         [ Ui.Container.view { align = "stretch"
                               , direction = "column"
@@ -190,17 +187,19 @@ view address model =
       , Ui.DropdownMenu.view
         (forwardTo address FabMenu)
         (Ui.fab "plus" [])
-        [ FolderComponent.menuItem "android-film" "Add Video" (onClick address (OpenModal Nothing))
-        , FolderComponent.menuItem "folder" "Add Folder" (onClick address NoOp)
+        [ FolderComponent.menuItem "android-film" "Add Video" (onClick address (OpenVideoModal Nothing))
+        , FolderComponent.menuItem "folder" "Add Folder" (onClick address (OpenFolderModal Nothing))
         ]
         model.fabMenu
       ]
 
-getParam : String -> Hop.Payload -> String
+getParam : String -> Hop.Payload -> Int
 getParam key payload =
   payload.params
     |> Dict.get key
     |> Maybe.withDefault ""
+    |> String.toInt
+    |> Result.withDefault 0
 
 loadFolderContents id =
   Effects.batch [ (fetchVideos id VideosLoaded)
@@ -215,44 +214,73 @@ update action model =
     App act ->
       { model | app = Ui.App.update act model.app }
         |> fxNone
-    Modal act ->
-      { model | modal = Ui.Modal.update act model.modal }
+    VideoModal act ->
+      { model | videoModal = VideoModal.update act model.videoModal }
         |> fxNone
-    VideoForm act ->
-      { model | videoForm = VideoForm.update act model.videoForm }
-        |> fxNone
-    OpenModal Nothing ->
-      { model | modal = Ui.Modal.open model.modal
-              , videoForm = VideoForm.init
-              }
-        |> closeDropdowns False
+    FolderModal act ->
+      { model | folderModal = FolderModal.update act model.folderModal }
         |> fxNone
     VideoSaved (Ok video) ->
       let
         folderId = getParam "folderId" model.routerPayload
       in
-        ({ model | modal = Ui.Modal.close model.modal }, loadFolderContents folderId)
+        (closeModals model, loadFolderContents folderId)
     VideoSaved (Err video) ->
       fxNone model
+    FolderSaved (Ok video) ->
+      let
+        folderId = getParam "folderId" model.routerPayload
+      in
+        (closeModals model, loadFolderContents folderId)
+    FolderSaved (Err video) ->
+      fxNone model
+    CreateOrPatchFolder ->
+      let
+        params = FolderModal.asParams model.folderModal
+        id = Maybe.withDefault 0 model.folderModal.form.id
+        folderId = getParam "folderId" model.routerPayload
+        params' = params ++ [("folderId", J.int folderId)]
+      in
+        if FolderModal.isNew model.folderModal then
+          (model, createFolder params' FolderSaved)
+        else
+          (model, patchFolder id params' FolderSaved)
     CreateOrPatchVideo ->
       let
-        params = VideoForm.asParams model.videoForm
-        id = Maybe.withDefault "" model.videoForm.id
+        params = VideoModal.asParams model.videoModal
+        id = Maybe.withDefault 0 model.videoModal.form.id
         folderId = getParam "folderId" model.routerPayload
-        params' = params ++ [("folderId", J.string folderId)]
+        params' = params ++ [("folderId", J.int folderId)]
       in
-        if VideoForm.isNew model.videoForm then
+        if VideoModal.isNew model.videoModal then
           (model, createVideo params' VideoSaved)
         else
           (model, patchVideo id params' VideoSaved)
-    OpenModal (Just videoId) ->
+    OpenFolderModal Nothing ->
+      { model | folderModal = FolderModal.open model.folderModal }
+        |> closeDropdowns False
+        |> fxNone
+    OpenFolderModal (Just folderId) ->
+      let
+        folder = List.Extra.find (\item -> item.id == folderId) model.folds
+      in
+        case folder of
+          Just fold ->
+            { model | folderModal = FolderModal.openWithFolder fold model.folderModal }
+              |> closeDropdowns False
+              |> fxNone
+          _ -> fxNone model
+    OpenVideoModal Nothing ->
+      { model | videoModal = VideoModal.open model.videoModal }
+        |> closeDropdowns False
+        |> fxNone
+    OpenVideoModal (Just videoId) ->
       let
         video = List.Extra.find (\item -> item.id == videoId) model.vids
       in
         case video of
           Just vid ->
-            { model | modal = Ui.Modal.open model.modal
-                    , videoForm = VideoForm.fromVideo vid }
+            { model | videoModal = VideoModal.openWithVideo vid model.videoModal }
               |> closeDropdowns False
               |> fxNone
           _ -> fxNone model
@@ -271,12 +299,12 @@ update action model =
           else Effects.none
 
         videoEffects =
-          if currentVideoId == "" && videoId /= "" then (fetchVideo videoId VideoLoaded)
+          if currentVideoId == 0 && videoId /= 0 then (fetchVideo videoId VideoLoaded)
           else Effects.none
 
         updatedModel =
           { model | routerPayload = payload
-                  , video = if videoId == "" then Nothing else model.video }
+                  , video = if videoId == 0 then Nothing else model.video }
       in
         (updatedModel, Effects.batch [folderEffects, videoEffects])
     VideoLoaded (Ok video) ->
@@ -287,7 +315,8 @@ update action model =
               , vids = videos }
         |> fxNone
     FoldersLoaded (Ok folders) ->
-      { model | folders = List.map (\item -> FolderComponent.init item "folder") folders }
+      { model | folders = List.map (\item -> FolderComponent.init item "folder") folders
+              , folds = folders }
         |> fxNone
     MouseIsDown pressed ->
       closeDropdowns pressed model
@@ -318,7 +347,7 @@ update action model =
     EscIsDown isDown ->
       let
         query =
-          createQuery Nothing (Just "") model.routerPayload
+          createQuery Nothing (Just 0) model.routerPayload
       in
         if isDown then
           (model, Effects.map HopAction (Hop.addQuery model.routerPayload.url query))
@@ -340,16 +369,15 @@ closeDropdowns pressed model =
             }
 
 closeModals model =
-  { model | modal = Ui.Modal.close model.modal }
+  { model | videoModal = VideoModal.close model.videoModal
+          , folderModal = FolderModal.close model.folderModal }
 
 fxNone : Model -> (Model, Effects.Effects action)
 fxNone model =
   (model, Effects.none)
 
 app =
-  StartApp.start { init = (init, Effects.batch [ (fetchVideos "" VideosLoaded)
-                                               , (fetchFolders "" FoldersLoaded)
-                                               ])
+  StartApp.start { init = (init, loadFolderContents 0)
                  , view = view
                  , update = update
                  , inputs = [ Signal.dropRepeats router.signal

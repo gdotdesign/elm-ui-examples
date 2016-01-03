@@ -16,7 +16,7 @@ type alias Model =
   , image : String
   , name : String
   , kind : String
-  , id : String
+  , id : Int
   }
 
 type alias ViewModel =
@@ -34,7 +34,7 @@ update action model =
     Menu act ->
       { model | menu = DropdownMenu.update act model.menu }
 
-init : { a | id : String, name : String, image : String } -> String -> Model
+init : { a | id : Int, name : String, image : String } -> String -> Model
 init {id, name, image} kind =
   let
     menu = DropdownMenu.init

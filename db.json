@@ -1,58 +1,31 @@
 {
   "videos": [
     {
-      "url": "/videos/video.mp4",
-      "image": "/images/big_buck_bunny.jpg",
-      "name": "Bick Buck Bunny",
-      "id": "01",
-      "folderId": ""
-    },
-    {
-      "name": "Avengers",
-      "image": "http://cdn3-www.superherohype.com/assets/uploads/gallery/the_avengers_4997/avengers_age_of_ultron_8175/10869325_591589580977275_2778898650041679518_o.jpg",
-      "id": "06",
-      "folderId": "",
-      "url": ""
-    },
-    {
-      "image": "asdasd",
-      "name": "Test Video #1",
-      "url": "asdasd",
-      "folderId": "",
-      "id": "a2861c58-3cf4-4926-8297-8530fb3fbe40"
-    },
-    {
-      "image": "http://www.gstatic.com/tv/thumb/movieposters/27997/p27997_p_v7_aa.jpg",
-      "name": "Final Fantasy - Spirits Within",
-      "url": "http://mirrorblender.top-ix.org/peach/bigbuckbunny_movies/big_buck_bunny_1080p_surround.avi",
-      "folderId": "02",
-      "id": "a29436e0-812e-4121-89a9-59bdb0532c4d"
+      "image": "test",
+      "name": "set",
+      "url": "tasd",
+      "folderId": 0,
+      "id": 1
     }
   ],
   "folders": [
     {
-      "name": "Folder 1",
-      "image": "/images/big_buck_bunny.jpg",
-      "id": "02",
-      "folderId": ""
+      "image": "estasd",
+      "name": "estasd",
+      "folderId": 0,
+      "id": 1
     },
     {
-      "name": "Folder 2",
-      "image": "",
-      "id": "03",
-      "folderId": "02"
+      "image": "test",
+      "name": "sets",
+      "folderId": 1,
+      "id": 2
     },
     {
-      "name": "Folder 3",
-      "image": "",
-      "id": "04",
-      "folderId": "03"
-    },
-    {
-      "name": "Folder 4",
-      "image": "",
-      "id": "05",
-      "folderId": "04"
+      "image": "asdasd",
+      "name": "asd",
+      "folderId": 1,
+      "id": 3
     }
   ]
 }
