@@ -50,6 +50,7 @@ type Action
   | VideoLoaded (Result String Video)
   | VideoSaved (Result String Video)
   | FolderSaved (Result String Folder)
+  | Refresh (Result String J.Value)
   -- Navigation
   | NavigateTo (Dict.Dict String String)
   | HandleChange Hop.Payload
@@ -66,6 +67,8 @@ type Action
   | CreateOrPatchVideo
   | MouseIsDown Bool
   | EscIsDown Bool
+  | DeleteFolder Int
+  | DeleteVideo Int
   | OpenVideoModal (Maybe Int)
   | OpenFolderModal (Maybe Int)
   | NoOp
@@ -127,7 +130,7 @@ renderVideo address base model =
     FolderComponent.view
       (forwardTo address (VideoAction model.id))
       { onClick = onClick address (NavigateTo query)
-      , onDelete = onClick address NoOp
+      , onDelete = onClick address (DeleteVideo model.id)
       , onEdit = onClick address (OpenVideoModal (Just model.id))
       }
       model
@@ -139,7 +142,7 @@ renderFolder address base model =
     FolderComponent.view
       (forwardTo address (FolderAction model.id))
       { onClick = onClick address (NavigateTo query)
-      , onDelete = onClick address NoOp
+      , onDelete = onClick address (DeleteFolder model.id)
       , onEdit = onClick address (OpenFolderModal (Just model.id))
       }
       model
@@ -203,6 +206,13 @@ getParam key payload =
 loadFolderContents id =
   fetchFolderContents id FolderContentsLoaded
 
+refresh : Model -> (Model, Effects.Effects Action)
+refresh model =
+  let
+    folderId = getParam "folderId" model.routerPayload
+  in
+    (closeModals model, loadFolderContents folderId)
+
 update: Action -> Model -> (Model, Effects.Effects Action)
 update action model =
   case action of
@@ -217,20 +227,19 @@ update action model =
     FolderModal act ->
       { model | folderModal = FolderModal.update act model.folderModal }
         |> fxNone
+
+    DeleteFolder id ->
+      (closeDropdowns False model, deleteFolder id Refresh)
+    DeleteVideo id ->
+      (closeDropdowns False model, deleteVideo id Refresh)
+
+    Refresh (Ok _) ->
+      refresh model
     VideoSaved (Ok video) ->
-      let
-        folderId = getParam "folderId" model.routerPayload
-      in
-        (closeModals model, loadFolderContents folderId)
-    VideoSaved (Err video) ->
-      fxNone model
+      refresh model
     FolderSaved (Ok video) ->
-      let
-        folderId = getParam "folderId" model.routerPayload
-      in
-        (closeModals model, loadFolderContents folderId)
-    FolderSaved (Err video) ->
-      fxNone model
+      refresh model
+
     CreateOrPatchFolder ->
       let
         params = FolderModal.asParams model.folderModal
@@ -309,6 +318,7 @@ update action model =
         |> fxNone
     FolderContentsLoaded (Ok contents) ->
       { model | folders = List.map (\item -> FolderComponent.init item "folder") contents.folders
+                          |> List.filter (\item -> item.id /= 0)
               , videos = List.map (\item -> FolderComponent.init item "video") contents.videos
               , vids = contents.videos
               , folds = contents.folders }

@@ -1,43 +1,11 @@
 {
-  "videos": [
-    {
-      "image": "test",
-      "name": "set",
-      "url": "tasd",
-      "folderId": 0,
-      "id": 1
-    }
-  ],
+  "videos": [],
   "folders": [
     {
       "name": "root",
       "image": "",
-      "folderId": -1,
-      "id": 0
-    },
-    {
-      "image": "estasd",
-      "name": "estasd",
       "folderId": 0,
-      "id": 1
-    },
-    {
-      "image": "test",
-      "name": "sets",
-      "folderId": 1,
-      "id": 2
-    },
-    {
-      "image": "asdasd",
-      "name": "asd",
-      "folderId": 1,
-      "id": 3
-    },
-    {
-      "image": "a",
-      "name": "sad",
-      "folderId": 2,
-      "id": 4
+      "id": 0
     }
   ]
 }

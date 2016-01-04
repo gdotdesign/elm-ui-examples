@@ -92,3 +92,6 @@ post url params decoder action =
 
 patch url params decoder action =
   request url "PATCH" params decoder action
+
+delete url params decoder action =
+  request url "DELETE" params decoder action

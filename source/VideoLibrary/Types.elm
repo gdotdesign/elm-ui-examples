@@ -89,6 +89,14 @@ createVideo params action =
     videoDecoder
     action
 
+deleteVideo : Int -> (Result String J.Value -> a) -> Effects.Effects a
+deleteVideo id action =
+  Rest.delete
+    ("http://localhost:8002/videos/" ++ (toString id))
+    []
+    Json.value
+    action
+
 patchVideo : Int -> List (String, J.Value) -> (Result String Video -> a) -> Effects.Effects a
 patchVideo id params action =
   Rest.patch
@@ -103,6 +111,14 @@ createFolder params action =
     "http://localhost:8002/folders/"
     params
     folderDecoder
+    action
+
+deleteFolder : Int -> (Result String J.Value -> a) -> Effects.Effects a
+deleteFolder id action =
+  Rest.delete
+    ("http://localhost:8002/folders/" ++ (toString id))
+    []
+    Json.value
     action
 
 patchFolder : Int -> List (String, J.Value) -> (Result String Folder -> a) -> Effects.Effects a
