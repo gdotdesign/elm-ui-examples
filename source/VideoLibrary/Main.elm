@@ -46,8 +46,7 @@ type alias Model =
 
 type Action
   -- Request results
-  = FoldersLoaded (Result String (List Folder))
-  | VideosLoaded (Result String (List Video))
+  = FolderContentsLoaded (Result String FolderContents)
   | VideoLoaded (Result String Video)
   | VideoSaved (Result String Video)
   | FolderSaved (Result String Folder)
@@ -202,9 +201,7 @@ getParam key payload =
     |> Result.withDefault 0
 
 loadFolderContents id =
-  Effects.batch [ (fetchVideos id VideosLoaded)
-                , (fetchFolders id FoldersLoaded)
-                ]
+  fetchFolderContents id FolderContentsLoaded
 
 update: Action -> Model -> (Model, Effects.Effects Action)
 update action model =
@@ -310,13 +307,11 @@ update action model =
     VideoLoaded (Ok video) ->
       { model | video = Just video }
         |> fxNone
-    VideosLoaded (Ok videos) ->
-      { model | videos = List.map (\item -> FolderComponent.init item "video") videos
-              , vids = videos }
-        |> fxNone
-    FoldersLoaded (Ok folders) ->
-      { model | folders = List.map (\item -> FolderComponent.init item "folder") folders
-              , folds = folders }
+    FolderContentsLoaded (Ok contents) ->
+      { model | folders = List.map (\item -> FolderComponent.init item "folder") contents.folders
+              , videos = List.map (\item -> FolderComponent.init item "video") contents.videos
+              , vids = contents.videos
+              , folds = contents.folders }
         |> fxNone
     MouseIsDown pressed ->
       closeDropdowns pressed model

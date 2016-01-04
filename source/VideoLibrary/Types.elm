@@ -28,6 +28,15 @@ type alias Folder =
   , id : Int
   }
 
+type alias FolderContents =
+  { folders : List Folder
+  , videos : List Video
+  , parent : Maybe Folder
+  , folderId : Int
+  , name : String
+  , id : Int
+  }
+
 videoDecoder : Json.Decoder Video
 videoDecoder =
   Json.succeed Video
@@ -45,21 +54,23 @@ folderDecoder =
     |: ("name" := Json.string)
     |: ("id" := Json.int)
 
--- Queries
-fetchVideos : Int -> (Result String (List Video) -> a) -> Effects.Effects a
-fetchVideos folderId action =
-  Rest.get
-    "http://localhost:8002/videos/"
-    [("folderId", (toString folderId))]
-    (Json.list videoDecoder)
-    action
+folderContentsDecoder : Json.Decoder FolderContents
+folderContentsDecoder =
+  Json.succeed FolderContents
+    |: ("folders" := Json.list folderDecoder)
+    |: ("videos" := Json.list videoDecoder)
+    |: (Json.maybe ("parent" := folderDecoder))
+    |: ("folderId" := Json.int)
+    |: ("name" := Json.string)
+    |: ("id" := Json.int)
 
-fetchFolders : Int -> (Result String (List Folder) -> a) -> Effects.Effects a
-fetchFolders folderId action =
+-- Queries
+fetchFolderContents : Int -> (Result String FolderContents -> a) -> Effects.Effects a
+fetchFolderContents folderId action =
   Rest.get
-    "http://localhost:8002/folders/"
-    [("folderId", (toString folderId))]
-    (Json.list folderDecoder)
+    ("http://localhost:8002/folders/" ++ (toString folderId) ++ "/?_embed=videos&_embed=folders&_expand=folder")
+    []
+    folderContentsDecoder
     action
 
 fetchVideo : Int -> (Result String Video -> a) -> Effects.Effects a

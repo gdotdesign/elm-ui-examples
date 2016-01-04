@@ -10,6 +10,12 @@
   ],
   "folders": [
     {
+      "name": "root",
+      "image": "",
+      "folderId": -1,
+      "id": 0
+    },
+    {
       "image": "estasd",
       "name": "estasd",
       "folderId": 0,
@@ -26,6 +32,12 @@
       "name": "asd",
       "folderId": 1,
       "id": 3
+    },
+    {
+      "image": "a",
+      "name": "sad",
+      "folderId": 2,
+      "id": 4
     }
   ]
 }
