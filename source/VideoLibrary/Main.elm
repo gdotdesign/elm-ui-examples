@@ -17,6 +17,7 @@ import Html.Attributes exposing (style, src, controls, classList)
 import Html.Events exposing (onClick)
 import Html exposing (node, text)
 
+import Ui.NotificationCenter
 import Ui.DropdownMenu
 import Ui.Container
 import Ui.Button
@@ -42,6 +43,7 @@ type alias Model =
   , folderModal : FolderModal.Model
   , folds : List Folder
   , vids : List Video
+  , notifications : Ui.NotificationCenter.Model
   }
 
 type Action
@@ -56,6 +58,7 @@ type Action
   | HandleChange Hop.Payload
   | HopAction Hop.Action
   -- Components
+  | Notifications Ui.NotificationCenter.Action
   | FolderAction Int FolderComponent.Action
   | VideoAction Int FolderComponent.Action
   | FabMenu Ui.DropdownMenu.Action
@@ -80,6 +83,7 @@ init =
   in
     { app = Ui.App.init "Video Library"
     , routerPayload = router.payload
+    , notifications = Ui.NotificationCenter.init 4000 320
     , video = Nothing
     , folders = []
     , videos = []
@@ -162,7 +166,8 @@ view address model =
         Nothing -> text ""
   in
     Ui.App.view (forwardTo address App) model.app
-      [ VideoModal.view (forwardTo address VideoModal)
+      [ Ui.NotificationCenter.view (forwardTo address Notifications) model.notifications
+      , VideoModal.view (forwardTo address VideoModal)
           { address = address
           , action = CreateOrPatchVideo
           }
@@ -218,6 +223,14 @@ update action model =
   case action of
     NavigateTo query ->
       (model, Effects.map HopAction (Hop.addQuery model.routerPayload.url query))
+
+    Notifications act ->
+      let
+        (notifications, effect) =
+          Ui.NotificationCenter.update act model.notifications
+      in
+        ({ model | notifications = notifications }, Effects.map Notifications effect)
+
     App act ->
       { model | app = Ui.App.update act model.app }
         |> fxNone
@@ -316,6 +329,8 @@ update action model =
     VideoLoaded (Ok video) ->
       { model | video = Just video }
         |> fxNone
+    FolderContentsLoaded (Err message) ->
+      notify message model
     FolderContentsLoaded (Ok contents) ->
       { model | folders = List.map (\item -> FolderComponent.init item "folder") contents.folders
                           |> List.filter (\item -> item.id /= 0)
@@ -362,6 +377,13 @@ update action model =
           |> closeDropdowns isDown
           |> fxNone
     _ -> fxNone model
+
+notify message model =
+  let
+    (notifications, effect) =
+      Ui.NotificationCenter.notify (text message) model.notifications
+  in
+    ({ model | notifications = notifications }, Effects.map Notifications effect)
 
 closeDropdowns pressed model =
   let
