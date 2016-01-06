@@ -55,9 +55,9 @@ update action model =
 view: Signal.Address Action -> ViewModel -> Model -> Html.Html
 view address viewModel model =
   node "video-library-folder" []
-    ((List.map (renderItem address (viewModel.folderActions)) model.folders)
+    ((List.map (renderItem address (viewModel.folderActions) FolderAction) model.folders)
       ++
-      (List.map (renderItem address (viewModel.videoActions)) model.videos)
+      (List.map (renderItem address (viewModel.videoActions) VideoAction) model.videos)
     )
 
 handleClick pressed model =
@@ -65,9 +65,10 @@ handleClick pressed model =
           , videos = List.map (Item.handleClick pressed) model.videos
   }
 
-renderItem : Signal.Address Action -> (Item.Model -> Item.ViewModel) -> Item.Model -> Html.Html
-renderItem address viewModel model =
+renderItem : Signal.Address Action -> (Item.Model -> Item.ViewModel)
+           -> (Int -> Item.Action -> Action) -> Item.Model -> Html.Html
+renderItem address viewModel action model =
   Item.view
-    (address >>> (FolderAction model.id))
+    (address >>> (action model.id))
     (viewModel model)
     model

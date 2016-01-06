@@ -130,7 +130,7 @@ createQuery folderId videoId payload =
     , ("videoId", toString (Maybe.withDefault (getParam "videoId" payload) videoId))
     ]
 
-va address base model =
+videoActions address base model =
   let
     query = createQuery Nothing (Just model.id) base.routerPayload
   in
@@ -139,7 +139,7 @@ va address base model =
     , onEdit = onClick address (OpenVideoModal (Just model.id))
     }
 
-fa address base model =
+folderActions address base model =
   let
     query = createQuery (Just model.id) Nothing base.routerPayload
   in
@@ -200,8 +200,8 @@ view address model =
               -- , breadcrumbs address (node "span" [] [text "/"]) breadcrumbItems
               , FolderView.view
                 (forwardTo address FolderView)
-                { videoActions = fa address model
-                , folderActions = va address model
+                { videoActions = videoActions address model
+                , folderActions = folderActions address model
                 }
                 model.folderView
               ]
