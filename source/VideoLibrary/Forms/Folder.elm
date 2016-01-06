@@ -1,4 +1,4 @@
-module VideoLibrary.FolderForm where
+module VideoLibrary.Forms.Folder where
 
 import Ext.Signal exposing ((>>>))
 import Html exposing (node, text)

@@ -28,8 +28,10 @@ import Debug exposing (log)
 
 import VideoLibrary.Types exposing (..)
 import VideoLibrary.Components.Folder as FolderComponent
-import VideoLibrary.VideoModal as VideoModal
-import VideoLibrary.FolderModal as FolderModal
+import VideoLibrary.Components.Modal as Modal
+
+import VideoLibrary.Forms.Video as VideoForm
+import VideoLibrary.Forms.Folder as FolderForm
 
 -- Main entry point
 type alias Model =
@@ -39,11 +41,12 @@ type alias Model =
   , video: Maybe Video
   , routerPayload : Hop.Payload
   , fabMenu: Ui.DropdownMenu.Model
-  , videoModal: VideoModal.Model
-  , folderModal : FolderModal.Model
   , folds : List Folder
   , vids : List Video
   , notifications : Ui.NotificationCenter.Model
+
+  , folderModal : Modal.Model FolderForm.Model Folder FolderForm.Action
+  , videoModal: Modal.Model VideoForm.Model Video VideoForm.Action
   }
 
 type Action
@@ -62,8 +65,6 @@ type Action
   | FolderAction Int FolderComponent.Action
   | VideoAction Int FolderComponent.Action
   | FabMenu Ui.DropdownMenu.Action
-  | FolderModal FolderModal.Action
-  | VideoModal VideoModal.Action
   | App Ui.App.Action
   -- Lifecycle
   | CreateOrPatchFolder
@@ -75,6 +76,9 @@ type Action
   | OpenVideoModal (Maybe Int)
   | OpenFolderModal (Maybe Int)
   | NoOp
+  -- Modals
+  | FolderModal (Modal.Action FolderForm.Action)
+  | VideoModal (Modal.Action VideoForm.Action)
 
 init : Model
 init =
@@ -89,13 +93,25 @@ init =
     , videos = []
     , vids = []
     , folds = []
-    , videoModal = VideoModal.init
-    , folderModal = FolderModal.init
     , fabMenu = { fabMenu | offsetY = 10
                           , favoredSides = { horizontal = "left"
                                            , vertical = "top"
                                            }
                 }
+    , folderModal = Modal.init { init = FolderForm.init
+                               , update = FolderForm.update
+                               , asParams = FolderForm.asParams
+                               , fromEntity = FolderForm.fromFolder
+                               , isValid = FolderForm.isValid
+                               , isNew = FolderForm.isNew
+                               }
+    , videoModal = Modal.init { init = VideoForm.init
+                              , update = VideoForm.update
+                              , asParams = VideoForm.asParams
+                              , fromEntity = VideoForm.fromVideo
+                              , isValid = VideoForm.isValid
+                              , isNew = VideoForm.isNew
+                              }
     }
 
 routes : List (String, Hop.Payload -> Action)
@@ -167,14 +183,17 @@ view address model =
   in
     Ui.App.view (forwardTo address App) model.app
       [ Ui.NotificationCenter.view (forwardTo address Notifications) model.notifications
-      , VideoModal.view (forwardTo address VideoModal)
+      , Modal.view (forwardTo address VideoModal)
           { address = address
           , action = CreateOrPatchVideo
+          , view = VideoForm.view
           }
           model.videoModal
-      , FolderModal.view (forwardTo address FolderModal)
+      , Modal.view (forwardTo address FolderModal)
           { address = address
-          , action = CreateOrPatchFolder }
+          , action = CreateOrPatchFolder
+          , view = FolderForm.view
+          }
           model.folderModal
       , node "video-library" []
         [ Ui.Container.view { align = "stretch"
@@ -235,10 +254,10 @@ update action model =
       { model | app = Ui.App.update act model.app }
         |> fxNone
     VideoModal act ->
-      { model | videoModal = VideoModal.update act model.videoModal }
+      { model | videoModal = Modal.update act model.videoModal }
         |> fxNone
     FolderModal act ->
-      { model | folderModal = FolderModal.update act model.folderModal }
+      { model | folderModal = Modal.update act model.folderModal }
         |> fxNone
 
     DeleteFolder id ->
@@ -255,28 +274,28 @@ update action model =
 
     CreateOrPatchFolder ->
       let
-        params = FolderModal.asParams model.folderModal
+        params = Modal.asParams model.folderModal
         id = Maybe.withDefault 0 model.folderModal.form.id
         folderId = getParam "folderId" model.routerPayload
         params' = params ++ [("folderId", J.int folderId)]
       in
-        if FolderModal.isNew model.folderModal then
+        if Modal.isNew model.folderModal then
           (model, createFolder params' FolderSaved)
         else
           (model, patchFolder id params' FolderSaved)
     CreateOrPatchVideo ->
       let
-        params = VideoModal.asParams model.videoModal
+        params = Modal.asParams model.videoModal
         id = Maybe.withDefault 0 model.videoModal.form.id
         folderId = getParam "folderId" model.routerPayload
         params' = params ++ [("folderId", J.int folderId)]
       in
-        if VideoModal.isNew model.videoModal then
+        if Modal.isNew model.videoModal then
           (model, createVideo params' VideoSaved)
         else
           (model, patchVideo id params' VideoSaved)
     OpenFolderModal Nothing ->
-      { model | folderModal = FolderModal.open model.folderModal }
+      { model | folderModal = Modal.open model.folderModal }
         |> closeDropdowns False
         |> fxNone
     OpenFolderModal (Just folderId) ->
@@ -285,12 +304,12 @@ update action model =
       in
         case folder of
           Just fold ->
-            { model | folderModal = FolderModal.openWithFolder fold model.folderModal }
+            { model | folderModal = Modal.openWithEntity fold model.folderModal }
               |> closeDropdowns False
               |> fxNone
           _ -> fxNone model
     OpenVideoModal Nothing ->
-      { model | videoModal = VideoModal.open model.videoModal }
+      { model | videoModal = Modal.open model.videoModal }
         |> closeDropdowns False
         |> fxNone
     OpenVideoModal (Just videoId) ->
@@ -299,7 +318,7 @@ update action model =
       in
         case video of
           Just vid ->
-            { model | videoModal = VideoModal.openWithVideo vid model.videoModal }
+            { model | videoModal = Modal.openWithEntity vid model.videoModal }
               |> closeDropdowns False
               |> fxNone
           _ -> fxNone model
@@ -396,8 +415,8 @@ closeDropdowns pressed model =
             }
 
 closeModals model =
-  { model | videoModal = VideoModal.close model.videoModal
-          , folderModal = FolderModal.close model.folderModal }
+  { model | videoModal = Modal.close model.videoModal
+          , folderModal = Modal.close model.folderModal }
 
 fxNone : Model -> (Model, Effects.Effects action)
 fxNone model =
