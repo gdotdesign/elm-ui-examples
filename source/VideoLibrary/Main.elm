@@ -40,6 +40,7 @@ type alias Model =
   , video: Maybe Video
   , routerPayload : Hop.Payload
   , fabMenu: Ui.DropdownMenu.Model
+  , currentFolder : Maybe FolderContents
   , folds : List Folder
   , vids : List Video
   , notifications : Ui.NotificationCenter.Model
@@ -88,6 +89,7 @@ init =
     , routerPayload = router.payload
     , notifications = Ui.NotificationCenter.init 4000 320
     , video = Nothing
+    , currentFolder = Nothing
     , folderView = FolderView.init [] []
     , vids = []
     , folds = []
@@ -162,6 +164,25 @@ breadcrumbs address separator items =
 view: Signal.Address Action -> Model -> Html.Html
 view address model =
   let
+    breadcrumbItems =
+      let
+        base = [("Library", NavigateTo (createQuery (Just 0) Nothing model.routerPayload))]
+        videoPart =
+          case model.video of
+            Just video ->
+              if video.id /= 0 then
+                [(video.name, NavigateTo (createQuery Nothing (Just video.id) model.routerPayload))]
+              else []
+            _ -> []
+        folderPart =
+          case model.currentFolder of
+            Just folder ->
+              if folder.id /= 0 then
+                [(folder.name, NavigateTo (createQuery (Just folder.id) Nothing model.routerPayload))]
+              else []
+            _ -> []
+      in
+        base ++ videoPart ++ folderPart
     videoPlayer =
       case model.video of
         Just video ->
@@ -197,7 +218,7 @@ view address model =
                             , compact = True } []
               [ Ui.header []
                 [ Ui.headerTitle [] [text "My Video Library"] ]
-              -- , breadcrumbs address (node "span" [] [text "/"]) breadcrumbItems
+              , breadcrumbs address (node "span" [] [text "/"]) breadcrumbItems
               , FolderView.view
                 (forwardTo address FolderView)
                 { videoActions = videoActions address model
@@ -353,6 +374,7 @@ update action model =
       notify message model
     FolderContentsLoaded (Ok contents) ->
       { model | folderView = FolderView.init contents.folders contents.videos
+              , currentFolder = Just contents
               , vids = contents.videos
               , folds = contents.folders }
         |> fxNone
