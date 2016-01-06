@@ -9,24 +9,26 @@ import Ui.Button
 import Ui.Modal
 
 type alias Model a b c =
-  { modal : Ui.Modal.Model
-  , functions : Functions a b c
+  { functions : Functions a b c
+  , modal : Ui.Modal.Model
   , form : a
   }
 
 type alias Functions a b c =
-  { isNew : a -> Bool
-  , asParams : a -> List (String, J.Value)
-  , fromEntity : b -> a
+  { asParams : a -> List (String, J.Value)
   , update : c -> a -> a
+  , fromEntity : b -> a
   , isValid : a -> Bool
+  , isNew : a -> Bool
   , init : a
   }
 
 type alias ViewModel a b c =
-  { address : Signal.Address a
+  { view : Signal.Address c -> b -> Html.Html
+  , saveTexts : (String, String)
+  , newTexts : (String, String)
+  , address : Signal.Address a
   , action : a
-  , view : Signal.Address c -> b -> Html.Html
   }
 
 type Action a
@@ -77,9 +79,9 @@ view address viewModel model =
   let
     (title, button) =
       if model.functions.isNew model.form then
-        ("Add Video", "Add")
+        viewModel.newTexts
       else
-        ("Edit Video", "Save")
+        viewModel.saveTexts
   in
     Ui.Modal.view
       (address >>> Modal)

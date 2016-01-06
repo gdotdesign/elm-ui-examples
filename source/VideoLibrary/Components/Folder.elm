@@ -1,6 +1,6 @@
 module VideoLibrary.Components.Folder where
 
-import Signal exposing (forwardTo)
+import Ext.Signal exposing ((>>>))
 
 import Html.Attributes exposing (classList, style)
 import Html exposing (node, text)
@@ -19,9 +19,15 @@ type alias Model =
   , id : Int
   }
 
+type alias Entity a =
+  { a | id : Int
+      , name : String
+      , image : String
+  }
+
 type alias ViewModel =
-  { onClick : Html.Attribute
-  , onDelete : Html.Attribute
+  { onDelete : Html.Attribute
+  , onClick : Html.Attribute
   , onEdit : Html.Attribute
   }
 
@@ -34,21 +40,25 @@ update action model =
     Menu act ->
       { model | menu = DropdownMenu.update act model.menu }
 
-init : { a | id : Int, name : String, image : String } -> String -> Model
+init : Entity a -> String -> Model
 init {id, name, image} kind =
   let
-    menu = DropdownMenu.init
+    menu =
+      DropdownMenu.init
+
+    favoredSides =
+      { horizontal = "right"
+      , vertical = "bottom"
+      }
   in
-    { menu = { menu | favoredSides = { horizontal = "right"
-                                     , vertical = "bottom"
-                                     }
-             }
+    { menu = { menu | favoredSides = favoredSides }
     , image = image
     , kind = kind
     , name = name
     , id = id
     }
 
+-- TODO: Move this to Elm-UI DropdownMenu
 menuItem : String -> String -> Html.Attribute -> Html.Html
 menuItem icon title action =
   DropdownMenu.item [action]
@@ -76,7 +86,7 @@ view address viewModel model =
     , Ui.Container.row []
         [ node "div" [viewModel.onClick] [text model.name]
         , DropdownMenu.view
-          (forwardTo address Menu)
+          (address >>> Menu)
           (Ui.icon "android-more-horizontal" True [])
           [ menuItem "android-open" "Open" viewModel.onClick
           , menuItem "edit" "Edit" viewModel.onEdit

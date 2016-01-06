@@ -30,8 +30,8 @@ type alias Folder =
 
 type alias FolderContents =
   { folders : List Folder
-  , videos : List Video
   , parent : Maybe Folder
+  , videos : List Video
   , folderId : Int
   , name : String
   , id : Int
@@ -58,13 +58,12 @@ folderContentsDecoder : Json.Decoder FolderContents
 folderContentsDecoder =
   Json.succeed FolderContents
     |: ("folders" := Json.list folderDecoder)
-    |: ("videos" := Json.list videoDecoder)
     |: (Json.maybe ("parent" := folderDecoder))
+    |: ("videos" := Json.list videoDecoder)
     |: ("folderId" := Json.int)
     |: ("name" := Json.string)
     |: ("id" := Json.int)
 
--- Queries
 fetchFolderContents : Int -> (Result String FolderContents -> a) -> Effects.Effects a
 fetchFolderContents folderId action =
   Rest.get

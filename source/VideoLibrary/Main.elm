@@ -187,12 +187,16 @@ view address model =
           { address = address
           , action = CreateOrPatchVideo
           , view = VideoForm.view
+          , newTexts = ("Add Video", "Add")
+          , saveTexts = ("Edit Video", "Save")
           }
           model.videoModal
       , Modal.view (forwardTo address FolderModal)
           { address = address
           , action = CreateOrPatchFolder
           , view = FolderForm.view
+          , newTexts = ("Add Folder", "Add")
+          , saveTexts = ("Edit Folder", "Save")
           }
           model.folderModal
       , node "video-library" []
