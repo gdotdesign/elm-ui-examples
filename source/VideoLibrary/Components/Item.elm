@@ -1,4 +1,4 @@
-module VideoLibrary.Components.Folder where
+module VideoLibrary.Components.Item where
 
 import Ext.Signal exposing ((>>>))
 
@@ -40,8 +40,8 @@ update action model =
     Menu act ->
       { model | menu = DropdownMenu.update act model.menu }
 
-init : Entity a -> String -> Model
-init {id, name, image} kind =
+init : String -> Entity a -> Model
+init kind {id, name, image} =
   let
     menu =
       DropdownMenu.init

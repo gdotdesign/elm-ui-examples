@@ -27,7 +27,8 @@ import Ui
 import Debug exposing (log)
 
 import VideoLibrary.Types exposing (..)
-import VideoLibrary.Components.Folder as FolderComponent
+import VideoLibrary.Components.FolderView as FolderView
+import VideoLibrary.Components.Item as Item
 import VideoLibrary.Components.Modal as Modal
 
 import VideoLibrary.Forms.Video as VideoForm
@@ -36,15 +37,13 @@ import VideoLibrary.Forms.Folder as FolderForm
 -- Main entry point
 type alias Model =
   { app: Ui.App.Model
-  , folders: List FolderComponent.Model
-  , videos : List FolderComponent.Model
   , video: Maybe Video
   , routerPayload : Hop.Payload
   , fabMenu: Ui.DropdownMenu.Model
   , folds : List Folder
   , vids : List Video
   , notifications : Ui.NotificationCenter.Model
-
+  , folderView : FolderView.Model
   , folderModal : Modal.Model FolderForm.Model Folder FolderForm.Action
   , videoModal: Modal.Model VideoForm.Model Video VideoForm.Action
   }
@@ -62,9 +61,9 @@ type Action
   | HopAction Hop.Action
   -- Components
   | Notifications Ui.NotificationCenter.Action
-  | FolderAction Int FolderComponent.Action
-  | VideoAction Int FolderComponent.Action
+
   | FabMenu Ui.DropdownMenu.Action
+  | FolderView FolderView.Action
   | App Ui.App.Action
   -- Lifecycle
   | CreateOrPatchFolder
@@ -89,8 +88,7 @@ init =
     , routerPayload = router.payload
     , notifications = Ui.NotificationCenter.init 4000 320
     , video = Nothing
-    , folders = []
-    , videos = []
+    , folderView = FolderView.init [] []
     , vids = []
     , folds = []
     , fabMenu = { fabMenu | offsetY = 10
@@ -132,6 +130,24 @@ createQuery folderId videoId payload =
     , ("videoId", toString (Maybe.withDefault (getParam "videoId" payload) videoId))
     ]
 
+va address base model =
+  let
+    query = createQuery Nothing (Just model.id) base.routerPayload
+  in
+    { onClick = onClick address (NavigateTo query)
+    , onDelete = onClick address (DeleteVideo model.id)
+    , onEdit = onClick address (OpenVideoModal (Just model.id))
+    }
+
+fa address base model =
+  let
+    query = createQuery (Just model.id) Nothing base.routerPayload
+  in
+    { onClick = onClick address (NavigateTo query)
+    , onDelete = onClick address (DeleteFolder model.id)
+    , onEdit = onClick address (OpenFolderModal (Just model.id))
+    }
+
 breadcrumbs : Signal.Address a -> Html.Html -> List (String, a) -> Html.Html
 breadcrumbs address separator items =
   let
@@ -142,30 +158,6 @@ breadcrumbs address separator items =
     node "ui-breadcrumbs" []
       (List.map renderItem items
       |> List.intersperse separator)
-
-renderVideo address base model =
-  let
-    query = createQuery Nothing (Just model.id) base.routerPayload
-  in
-    FolderComponent.view
-      (forwardTo address (VideoAction model.id))
-      { onClick = onClick address (NavigateTo query)
-      , onDelete = onClick address (DeleteVideo model.id)
-      , onEdit = onClick address (OpenVideoModal (Just model.id))
-      }
-      model
-
-renderFolder address base model =
-  let
-    query = createQuery (Just model.id) Nothing base.routerPayload
-  in
-    FolderComponent.view
-      (forwardTo address (FolderAction model.id))
-      { onClick = onClick address (NavigateTo query)
-      , onDelete = onClick address (DeleteFolder model.id)
-      , onEdit = onClick address (OpenFolderModal (Just model.id))
-      }
-      model
 
 view: Signal.Address Action -> Model -> Html.Html
 view address model =
@@ -201,24 +193,25 @@ view address model =
           model.folderModal
       , node "video-library" []
         [ Ui.Container.view { align = "stretch"
-                              , direction = "column"
-                              , compact = True } []
+                            , direction = "column"
+                            , compact = True } []
               [ Ui.header []
-                [ Ui.headerTitle [] [text "My Video Library"]]
+                [ Ui.headerTitle [] [text "My Video Library"] ]
               -- , breadcrumbs address (node "span" [] [text "/"]) breadcrumbItems
-              , (node "video-library-folder" []
-                  ((List.map (\item -> renderFolder address model item) model.folders)
-                    ++
-                    (List.map (\item -> renderVideo address model item) model.videos)
-                ))
+              , FolderView.view
+                (forwardTo address FolderView)
+                { videoActions = fa address model
+                , folderActions = va address model
+                }
+                model.folderView
               ]
         ]
       , videoPlayer
       , Ui.DropdownMenu.view
         (forwardTo address FabMenu)
         (Ui.fab "plus" [])
-        [ FolderComponent.menuItem "android-film" "Add Video" (onClick address (OpenVideoModal Nothing))
-        , FolderComponent.menuItem "folder" "Add Folder" (onClick address (OpenFolderModal Nothing))
+        [ Item.menuItem "android-film" "Add Video" (onClick address (OpenVideoModal Nothing))
+        , Item.menuItem "folder" "Add Folder" (onClick address (OpenFolderModal Nothing))
         ]
         model.fabMenu
       ]
@@ -262,6 +255,10 @@ update action model =
         |> fxNone
     FolderModal act ->
       { model | folderModal = Modal.update act model.folderModal }
+        |> fxNone
+
+    FolderView act ->
+      { model | folderView = FolderView.update act model.folderView }
         |> fxNone
 
     DeleteFolder id ->
@@ -355,9 +352,7 @@ update action model =
     FolderContentsLoaded (Err message) ->
       notify message model
     FolderContentsLoaded (Ok contents) ->
-      { model | folders = List.map (\item -> FolderComponent.init item "folder") contents.folders
-                          |> List.filter (\item -> item.id /= 0)
-              , videos = List.map (\item -> FolderComponent.init item "video") contents.videos
+      { model | folderView = FolderView.init contents.folders contents.videos
               , vids = contents.videos
               , folds = contents.folders }
         |> fxNone
@@ -365,27 +360,7 @@ update action model =
       closeDropdowns pressed model
         |> fxNone
 
-    FolderAction id act ->
-      let
-        updatedFolders view =
-          if view.id == id then
-            FolderComponent.update act view
-          else
-            view
-      in
-        { model | folders = List.map updatedFolders model.folders }
-        |> fxNone
 
-    VideoAction id act ->
-      let
-        updatedVideos view =
-          if view.id == id then
-            FolderComponent.update act view
-          else
-            view
-      in
-        { model | videos = List.map updatedVideos model.videos }
-        |> fxNone
 
     EscIsDown isDown ->
       let
@@ -409,14 +384,9 @@ notify message model =
     ({ model | notifications = notifications }, Effects.map Notifications effect)
 
 closeDropdowns pressed model =
-  let
-    updatedItems view =
-      FolderComponent.handleClick pressed view
-  in
-    { model | folders = List.map updatedItems model.folders
-            , videos = List.map updatedItems model.videos
-            , fabMenu = Ui.DropdownMenu.handleClick pressed model.fabMenu
-            }
+  { model | folderView = FolderView.handleClick pressed model.folderView
+          , fabMenu = Ui.DropdownMenu.handleClick pressed model.fabMenu
+          }
 
 closeModals model =
   { model | videoModal = Modal.close model.videoModal
