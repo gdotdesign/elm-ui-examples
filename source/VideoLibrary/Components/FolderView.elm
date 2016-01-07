@@ -1,6 +1,6 @@
 module VideoLibrary.Components.FolderView where
 
-import Html exposing (node, text, div, b)
+import Html exposing (node, text, div, b, span)
 import Ext.Signal exposing ((>>>))
 
 import VideoLibrary.Components.Item as Item
@@ -62,7 +62,10 @@ emptyView =
       ]
     , Ui.icon "ios-film" False []
     , div []
-      [ div [] [text "Add one by clicking on the + icon"]
+      [ div [] [text "Add one by clicking on the "
+               , Ui.icon "plus-circled" False []
+               , span [] [text " icon"]
+               ]
       , div [] [text "at the bottom right corner."]
       ]
     ]
