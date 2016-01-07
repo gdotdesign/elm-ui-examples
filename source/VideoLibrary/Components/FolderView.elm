@@ -1,10 +1,12 @@
 module VideoLibrary.Components.FolderView where
 
+import Html exposing (node, text, div, b)
 import Ext.Signal exposing ((>>>))
-import Html exposing (node)
 
 import VideoLibrary.Components.Item as Item
 import VideoLibrary.Types exposing (..)
+
+import Ui
 
 type alias Model =
   { folders: List Item.Model
@@ -43,15 +45,44 @@ update action model =
     VideoAction id act ->
       { model | videos = List.map (updatedItem id act) model.videos }
 
+
+emptyView : Html.Html
+emptyView =
+  node "video-library-folder-empty" []
+    [ div []
+      [ div []
+        [ text "There are no "
+        , b [] [text "folders"]
+        ]
+      , div []
+        [ text "or "
+        , b [] [text "videos"]
+        , text " here yet!"
+        ]
+      ]
+    , Ui.icon "ios-film" False []
+    , div []
+      [ div [] [text "Add one by clicking on the + icon"]
+      , div [] [text "at the bottom right corner."]
+      ]
+    ]
+
 view : Signal.Address Action -> ViewModel -> Model -> Html.Html
 view address viewModel model =
   let
     folders =
       renderItems address viewModel.folderActions FolderAction model.folders
+
     videos =
       renderItems address viewModel.videoActions VideoAction model.videos
+
+    contents =
+      if List.isEmpty (model.folders ++ model.videos) then
+        [emptyView]
+      else
+        (folders ++ videos)
   in
-    node "video-library-folder" [] (folders ++ videos)
+    node "video-library-folder" [] contents
 
 renderItems : Signal.Address Action -> (Item.Model -> Item.ViewModel)
             -> (Int -> Item.Action -> Action) -> List Item.Model -> List Html.Html

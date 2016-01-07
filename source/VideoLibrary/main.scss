@@ -214,13 +214,43 @@ video-library-video {
   }
 }
 
+video-library-folder-empty {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  text-align: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  ui-icon {
+    font-size: 216px;
+  }
+
+  > div:first-child {
+    font-size: 36px;
+  }
+
+  > div:last-child {
+    font-size: 20px;
+  }
+}
+
+ui-fab {
+  cursor: pointer;
+}
+
 video-library-folder {
   padding: 30px;
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
   align-items: flex-start;
   align-content: flex-start;
   flex: 1;
-
   overflow: auto;
+  flex-wrap: wrap;
 }
