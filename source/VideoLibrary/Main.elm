@@ -18,6 +18,7 @@ import Html exposing (node, text)
 
 import Ui.NotificationCenter
 import Ui.DropdownMenu
+import Ui.SearchInput
 import Ui.Container
 import Ui.App
 import Ui
@@ -30,6 +31,8 @@ import VideoLibrary.Types exposing (..)
 import VideoLibrary.Forms.Folder as FolderForm
 import VideoLibrary.Forms.Video as VideoForm
 
+import Debug exposing (log)
+
 -- Main entry point
 type alias Model =
   { folderModal : Modal.Model FolderForm.Model Folder FolderForm.Action
@@ -37,6 +40,7 @@ type alias Model =
   , notifications : Ui.NotificationCenter.Model
   , fabMenu: Ui.DropdownMenu.Model
   , folder : Maybe FolderContents
+  , search : Ui.SearchInput.Model
   , folderView : FolderView.Model
   , routerPayload : Hop.Payload
   , folders : List Folder
@@ -58,8 +62,8 @@ type Action
   | HopAction Hop.Action
   -- Components
   | Notifications Ui.NotificationCenter.Action
-
   | FabMenu Ui.DropdownMenu.Action
+  | Search Ui.SearchInput.Action
   | FolderView FolderView.Action
   | App Ui.App.Action
   -- Lifecycle
@@ -74,6 +78,7 @@ type Action
   -- Modals
   | FolderModal (Modal.Action FolderForm.Action)
   | VideoModal (Modal.Action VideoForm.Action)
+  | SS String
 
 init : Model
 init =
@@ -84,6 +89,7 @@ init =
     , folderView = FolderView.init [] []
     , app = Ui.App.init "Video Library"
     , routerPayload = router.payload
+    , search = Ui.SearchInput.init 1000
     , folder = Nothing
     , video = Nothing
     , folders = []
@@ -113,6 +119,11 @@ updateWithEffects : Action -> Model -> (Model, Effects.Effects Action)
 updateWithEffects action model =
   case action of
     -- Navigation
+    SS value ->
+      let
+        a = log "a" value
+      in
+        (model, Effects.none)
     HandleChange payload ->
       let
         -- Get updated ids
@@ -147,6 +158,12 @@ updateWithEffects action model =
       (model, Effects.map HopAction (Hop.addQuery model.routerPayload.url query))
 
     -- Components
+    Search act ->
+      let
+        (search, effect) =
+          Ui.SearchInput.update act model.search
+      in
+        ({ model | search = search }, Effects.map Search effect)
     Notifications act ->
       let
         (notifications, effect) =
@@ -316,7 +333,9 @@ view address model =
                             , direction = "column"
                             , compact = True } []
               [ Ui.header []
-                [ Ui.headerTitle [] [text "My Video Library"] ]
+                [ Ui.headerTitle [] [text "My Video Library"]
+                , Ui.SearchInput.view (address >>> Search) model.search
+                ]
               , breadcrumbs address (node "span" [] [text "/"]) breadcrumbItems
               , FolderView.view
                 (address >>> FolderView)
@@ -458,12 +477,16 @@ fxNone model =
 
 -- Start App
 app =
-  StartApp.start { init = (init, loadFolderContents 0)
-                 , view = view
-                 , update = updateWithEffects
-                 , inputs = [ Signal.dropRepeats router.signal
-                            , Signal.map EscIsDown (Keyboard.isDown 27)
-                            , Signal.map MouseIsDown Mouse.isDown] }
+  let
+    initial = init
+  in
+    StartApp.start { init = (init, loadFolderContents 0)
+                   , view = view
+                   , update = updateWithEffects
+                   , inputs = [ Signal.dropRepeats router.signal
+                              , Signal.map EscIsDown (Keyboard.isDown 27)
+                              , Signal.map MouseIsDown Mouse.isDown
+                              , Signal.map SS init.search.mailbox.signal] }
 
 main =
   app.html

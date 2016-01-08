@@ -32,7 +32,7 @@ type Action
   | PreviousDate
 
 init =
-  { date = Ext.Date.now }
+  { date = Ext.Date.now () }
 
 spendingInMonth : List Transaction -> Int
 spendingInMonth transactions =

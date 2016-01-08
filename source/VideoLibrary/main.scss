@@ -1,5 +1,30 @@
 @import 'ui/ui';
 
+ui-search-input {
+  @include colors($input);
+
+  background: transparent;
+  display: inline-block;
+  position: relative;
+  text-shadow: none;
+  margin-left: auto;
+  height: 36px;
+
+
+  ui-icon {
+    position: absolute;
+    font-size: 20px;
+    height: 36px;
+    width: 36px;
+    left: 0;
+    top: 0;
+  }
+
+  input[type=text] {
+    padding-left: 34px;
+  }
+}
+
 ui-breadcrumbs {
   border-bottom: 1px solid rgba(#000, 0.075);
   background: linear-gradient($secondary, dampen($secondary, 2%));
@@ -175,6 +200,7 @@ video-library {
 
   ui-breadcrumbs, ui-header {
     padding-left: 30px;
+    padding-right: 30px;
   }
 
   ui-header-title:first-child {

@@ -46,7 +46,7 @@ type alias Data =
 init : Model
 init =
   let
-    datePicker      = Ui.DatePicker.init Ext.Date.now
+    datePicker      = Ui.DatePicker.init (Ext.Date.now ())
     accountChooser  = Ui.Chooser.init [] "Account..." ""
     categoryChooser = Ui.Chooser.init [] "Category..." ""
   in

@@ -160,7 +160,7 @@ update' action model =
       in
         case page of
           1 ->
-            ({ model | pager = pager } |> populateForm 0 Ext.Date.now, Effects.none)
+            ({ model | pager = pager } |> populateForm 0 (Ext.Date.now ()), Effects.none)
           _ ->
             ({ model | pager = pager }, Effects.none)
     Save ->
