@@ -3,6 +3,7 @@
 ### Video Library
 
 Features:
+
 	- [x] Folder / File like structure to store videos
 	- [x] Play (mp4) videos with Html5 video player
 	- [x] URL Navigation
