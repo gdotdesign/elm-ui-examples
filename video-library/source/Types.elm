@@ -10,6 +10,7 @@ import Task
 import Http
 
 import Rest as Rest
+import Utils.Env as Env
 
 import Debug exposing (log)
 
@@ -37,8 +38,9 @@ type alias FolderContents =
   , id : Int
   }
 
+endpoint : String
 endpoint =
-  "https://elm-ui-server.herokuapp.com/"
+  Env.get "endpoint" "http://localhost:8002/" Json.string
 
 videoDecoder : Json.Decoder Video
 videoDecoder =
