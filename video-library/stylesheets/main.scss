@@ -1,5 +1,29 @@
 @import 'ui';
 
+ui-loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(#000, 0.5);
+  z-index: 100;
+  justify-content: center;
+  align-items: center;
+  display: none;
+
+  &.loading {
+    display: flex;
+  }
+
+  &:before {
+    font-size: 30px;
+    font-weight: bold;
+    color: #FFF;
+    content: "Loading...";
+  }
+}
+
 ui-search-input {
   @include colors($input);
 

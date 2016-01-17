@@ -2,15 +2,18 @@ module Components.FolderView where
 
 import Html exposing (node, text, div, b, span)
 import Ext.Signal2 exposing ((>>>))
+import Effects
 
 import Components.Item as Item
 import Types exposing (..)
 
+import Ui.Loader
 import Ui
 
 type alias Model =
   { folders: List Item.Model
   , videos : List Item.Model
+  , loader : Ui.Loader.Model
   }
 
 type alias ViewModel =
@@ -21,14 +24,33 @@ type alias ViewModel =
 type Action
   = FolderAction Int Item.Action
   | VideoAction Int Item.Action
+  | Loader Ui.Loader.Action
 
-init : List Folder -> List Video -> Model
-init folders videos =
-  { videos = List.map (Item.init "video") videos
-  , folders =
-      List.map (Item.init "folder") folders
-      |> List.filter (\item -> item.id /= 0)
+init : Model
+init =
+  { folders = []
+  , videos = []
+  , loader = Ui.Loader.init 200 "normal"
   }
+
+setData : List Folder -> List Video -> Model -> Model
+setData folders videos model =
+  { model | videos = List.map (Item.init "video") videos
+          , folders =
+              List.map (Item.init "folder") folders
+              |> List.filter (\item -> item.id /= 0)
+  }
+
+updateLoading : Bool -> Model -> (Model, Effects.Effects Action)
+updateLoading loading model =
+  let
+    (loader, effect) = Ui.Loader.start model.loader
+    (loader2) = Ui.Loader.finish model.loader
+  in
+    if loading then
+      ({ model | loader = loader }, Effects.map Loader effect)
+    else
+      ({ model | loader = loader2}, Effects.none)
 
 updatedItem : Int -> Item.Action -> Item.Model -> Item.Model
 updatedItem id act item =
@@ -44,8 +66,8 @@ update action model =
       { model | folders = List.map (updatedItem id act) model.folders }
     VideoAction id act ->
       { model | videos = List.map (updatedItem id act) model.videos }
-
-
+    Loader act ->
+      { model | loader = Ui.Loader.update act model.loader }
 emptyView : Html.Html
 emptyView =
   node "video-library-folder-empty" []
@@ -85,7 +107,7 @@ view address viewModel model =
       else
         (folders ++ videos)
   in
-    node "video-library-folder" [] contents
+    node "video-library-folder" [] (contents ++ [Ui.Loader.view model.loader])
 
 renderItems : Signal.Address Action -> (Item.Model -> Item.ViewModel)
             -> (Int -> Item.Action -> Action) -> List Item.Model -> List Html.Html

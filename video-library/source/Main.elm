@@ -86,7 +86,7 @@ init =
     fabMenu = Ui.DropdownMenu.init
   in
     { notifications = Ui.NotificationCenter.init 4000 320
-    , folderView = FolderView.init [] []
+    , folderView = FolderView.init
     , app = Ui.App.init "Video Library"
     , routerPayload = router.payload
     , search = Ui.SearchInput.init 1000
@@ -135,11 +135,11 @@ updateWithEffects action model =
         currentFolderId = getParam "folderId" model.routerPayload
 
         -- Get effects to load a new folder if neccessary
-        folderEffects =
+        (updatedModel', folderEffects) =
           if folderId /= currentFolderId then
-            loadFolderContents folderId
+            loadFolderContents folderId model
           else
-            Effects.none
+            (model, Effects.none)
 
         -- Get effects to load a video if neccessary
         videoEffects =
@@ -150,8 +150,8 @@ updateWithEffects action model =
 
         -- Update the model
         updatedModel =
-          { model | routerPayload = payload
-                  , video = if videoId == 0 then Nothing else model.video }
+          { updatedModel' | routerPayload = payload
+                          , video = if videoId == 0 then Nothing else model.video }
       in
         (updatedModel, Effects.batch [folderEffects, videoEffects])
     NavigateTo query ->
@@ -172,7 +172,8 @@ updateWithEffects action model =
         ({ model | notifications = notifications }, Effects.map Notifications effect)
 
     -- Failed Requests
-    FolderContentsLoaded (Err message) -> notify message model
+    FolderContentsLoaded (Err message) ->
+      notify message (loaded model)
     FolderSaved (Err message) -> notify message model
     VideoLoaded (Err message) -> notify message model
     VideoSaved (Err message) -> notify message model
@@ -280,16 +281,24 @@ update action model =
     VideoLoaded (Ok video) ->
       { model | video = Just video }
     FolderContentsLoaded (Ok contents) ->
-      { model | folderView = FolderView.init contents.folders contents.videos
+      { model | folderView = FolderView.setData contents.folders contents.videos model.folderView
               , folder = Just contents
               , videos = contents.videos
               , folders = contents.folders }
+      |> loaded
 
     -- MouseDown
     MouseIsDown pressed ->
       closeDropdowns pressed model
 
     _ -> model
+
+loaded : Model -> Model
+loaded model =
+  let
+    (folderView, effect) = FolderView.updateLoading False model.folderView
+  in
+    { model | folderView = folderView }
 
 view: Signal.Address Action -> Model -> Html.Html
 view address model =
@@ -441,16 +450,22 @@ getParam key payload =
     |> Result.withDefault 0
 
 -- Query Functions
-loadFolderContents : Int -> Effects.Effects Action
-loadFolderContents id =
-  fetchFolderContents id FolderContentsLoaded
+loadFolderContents : Int -> Model -> (Model, Effects.Effects Action)
+loadFolderContents id model =
+  let
+    effect = fetchFolderContents id FolderContentsLoaded
+    (folderView, viewEffect) = FolderView.updateLoading True model.folderView
+  in
+    ( { model | folderView = folderView }
+    , Effects.batch [effect, Effects.map FolderView viewEffect])
 
 refresh : Model -> (Model, Effects.Effects Action)
 refresh model =
   let
     folderId = getParam "folderId" model.routerPayload
+    (updatedModel, effect) = loadFolderContents folderId model
   in
-    (closeModals model, loadFolderContents folderId)
+    (closeModals updatedModel, effect)
 
 getParams : List (String, J.Value) -> Maybe Int -> Model
           -> (Int, List (String, J.Value))
@@ -498,15 +513,15 @@ fxNone model =
 -- Start App
 app =
   let
-    initial = init
+    (model, effect) = loadFolderContents 0 init
   in
-    StartApp.start { init = (init, loadFolderContents 0)
+    StartApp.start { init = (model, effect)
                    , view = view
                    , update = updateWithEffects
                    , inputs = [ Signal.dropRepeats router.signal
                               , Signal.map EscIsDown (Keyboard.isDown 27)
                               , Signal.map MouseIsDown Mouse.isDown
-                              , Signal.map SS init.search.mailbox.signal] }
+                              , Signal.map SS model.search.mailbox.signal] }
 
 main =
   app.html
