@@ -1,26 +1,31 @@
 @import 'ui';
 
+@keyframes loader {
+  from {
+    background-position-x: 0;
+  }
+
+  to {
+    background-position-x: 200px;
+  }
+}
+
 ui-loader {
+  height: 5px;
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
-  background: rgba(#000, 0.5);
-  z-index: 100;
-  justify-content: center;
-  align-items: center;
-  display: none;
+  visibility: hidden;
+  animation: loader 1s infinite linear;
+  background: linear-gradient(90deg, $primary, $primary 49.9999%, $focus 50%, $focus);
+  background-size: 200px 5px;
+  transition: 320ms;
+  opacity: 0;
 
   &.loading {
-    display: flex;
-  }
-
-  &:before {
-    font-size: 30px;
-    font-weight: bold;
-    color: #FFF;
-    content: "Loading...";
+    opacity: 1;
+    visibility: visible;
   }
 }
 

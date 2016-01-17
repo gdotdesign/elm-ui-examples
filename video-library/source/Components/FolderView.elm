@@ -107,7 +107,7 @@ view address viewModel model =
       else
         (folders ++ videos)
   in
-    node "video-library-folder" [] (contents ++ [Ui.Loader.view model.loader])
+    node "video-library-folder" [] ([Ui.Loader.view model.loader] ++ contents)
 
 renderItems : Signal.Address Action -> (Item.Model -> Item.ViewModel)
             -> (Int -> Item.Action -> Action) -> List Item.Model -> List Html.Html
