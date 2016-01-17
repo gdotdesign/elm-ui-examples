@@ -38,6 +38,11 @@ type alias FolderContents =
   , id : Int
   }
 
+type alias SearchData =
+  { folders : List Folder
+  , videos : List Video
+  }
+
 endpoint : String
 endpoint =
   Env.get "endpoint" "http://localhost:8002/" Json.string
@@ -58,6 +63,12 @@ folderDecoder =
     |: ("image" := Json.string)
     |: ("name" := Json.string)
     |: ("id" := Json.int)
+
+searchDataDecoder : Json.Decoder SearchData
+searchDataDecoder =
+  Json.succeed SearchData
+    |: ("folders" := Json.list folderDecoder)
+    |: ("videos" := Json.list videoDecoder)
 
 folderContentsDecoder : Json.Decoder FolderContents
 folderContentsDecoder =
@@ -131,4 +142,12 @@ patchFolder id params action =
     (endpoint ++ "folders/" ++ (toString id))
     params
     folderDecoder
+    action
+
+search : String -> (Result String SearchData -> a) -> Effects.Effects a
+search query action =
+  Rest.get
+    (endpoint ++ "video-library/search")
+    [("query", query)]
+    searchDataDecoder
     action

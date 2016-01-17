@@ -69,6 +69,7 @@ type Action
   -- Lifecycle
   | OpenFolderModal (Maybe Int)
   | OpenVideoModal (Maybe Int)
+  | SearchLoaded (Result String SearchData)
   | CreateOrPatchFolder
   | CreateOrPatchVideo
   | MouseIsDown Bool
@@ -89,7 +90,7 @@ init =
     , folderView = FolderView.init
     , app = Ui.App.init "Video Library"
     , routerPayload = router.payload
-    , search = Ui.SearchInput.init 1000
+    , search = Ui.SearchInput.init 200
     , folder = Nothing
     , video = Nothing
     , folders = []
@@ -123,7 +124,7 @@ updateWithEffects action model =
       let
         a = log "a" value
       in
-        (model, Effects.none)
+        (model, search value SearchLoaded)
     HandleChange payload ->
       let
         -- Get updated ids
@@ -173,6 +174,8 @@ updateWithEffects action model =
 
     -- Failed Requests
     FolderContentsLoaded (Err message) ->
+      notify message (loaded model)
+    SearchLoaded (Err message) ->
       notify message (loaded model)
     FolderSaved (Err message) -> notify message model
     VideoLoaded (Err message) -> notify message model
@@ -280,6 +283,10 @@ update action model =
     -- Responses
     VideoLoaded (Ok video) ->
       { model | video = Just video }
+    SearchLoaded (Ok contents) ->
+      { model | folderView = FolderView.setData contents.folders contents.videos model.folderView
+              , videos = contents.videos
+              , folders = contents.folders }
     FolderContentsLoaded (Ok contents) ->
       { model | folderView = FolderView.setData contents.folders contents.videos model.folderView
               , folder = Just contents

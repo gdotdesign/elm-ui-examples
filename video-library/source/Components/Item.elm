@@ -4,6 +4,8 @@ import Ext.Signal2 exposing ((>>>))
 
 import Html.Attributes exposing (classList, style)
 import Html exposing (node, text)
+import Json.Encode
+import VirtualDom
 
 import Ui.DropdownMenu as DropdownMenu
 import Ui.Container
@@ -77,7 +79,9 @@ closeMenu model =
 view : Signal.Address Action -> ViewModel -> Model -> Html.Html
 view address viewModel model =
   node "video-library-item"
-    [ classList [(model.kind, True)] ]
+    [ VirtualDom.property "key" (Json.Encode.string (model.kind ++ "-" ++ (toString model.id)))
+    , classList [(model.kind, True)]
+    ]
     [ node "video-library-item-image"
       [ viewModel.onClick
       , style [("background-image", "url(" ++ model.image ++ ")") ]
