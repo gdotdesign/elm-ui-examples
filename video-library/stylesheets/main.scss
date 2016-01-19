@@ -207,7 +207,7 @@ video-library-item {
        and (max-width: #{$breakpoint - 1px}) {
       width: calc((100% / #{$num}) - #{($num - 1) * 20px / $num});
 
-      &:nth-child(#{$num}n) {
+      &:nth-child(#{$num + 1}n) {
         margin-right: 0;
       }
     }

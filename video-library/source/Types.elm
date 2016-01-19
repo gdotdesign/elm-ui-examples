@@ -9,8 +9,8 @@ import Effects
 import Task
 import Http
 
+import Ui.Utils.Env as Env
 import Rest as Rest
-import Utils.Env as Env
 
 import Debug exposing (log)
 
