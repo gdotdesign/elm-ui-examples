@@ -171,10 +171,10 @@ view address viewModel model =
           , Ui.inputGroup "Account" accountChooser
           , Ui.inputGroup "Category" categoryChooser
           , Ui.NumberPad.view
-              (forwardTo address NumberPad)
               { bottomLeft = viewModel.bottomLeft
               , bottomRight = viewModel.bottomRight
               }
+              (forwardTo address NumberPad)
               model.numberPad
           ]
         ]
