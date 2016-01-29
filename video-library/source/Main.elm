@@ -38,6 +38,7 @@ type alias Model =
   { folderModal : Modal.Model FolderForm.Model Folder FolderForm.Action
   , videoModal: Modal.Model VideoForm.Model Video VideoForm.Action
   , notifications : Ui.NotificationCenter.Model
+  , mailbox : Signal.Mailbox Action
   , fabMenu: Ui.DropdownMenu.Model
   , folder : Maybe FolderContents
   , search : Ui.SearchInput.Model
@@ -76,6 +77,7 @@ type Action
   | DeleteFolder Int
   | DeleteVideo Int
   | EscIsDown Bool
+  | NoOp
   -- Modals
   | FolderModal (Modal.Action FolderForm.Action)
   | VideoModal (Modal.Action VideoForm.Action)
@@ -85,12 +87,14 @@ init : Model
 init =
   let
     fabMenu = Ui.DropdownMenu.init
+    mailbox = Signal.mailbox NoOp
   in
     { notifications = Ui.NotificationCenter.init 4000 320
     , folderView = FolderView.init
     , app = Ui.App.init "Video Library"
     , routerPayload = router.payload
-    , search = Ui.SearchInput.init 200
+    , search = Ui.SearchInput.initWithAddress (mailbox.address >>> SS) 200
+    , mailbox = mailbox
     , folder = Nothing
     , video = Nothing
     , folders = []
@@ -313,20 +317,20 @@ view address model =
     breadcrumbItems =
 
       let
-        base = [("Library", NavigateTo (createQuery (Just 0) Nothing model.routerPayload))]
+        base = [("Library", Just (NavigateTo (createQuery (Just 0) Nothing model.routerPayload)))]
         last =
           case model.folder of
             Just folder ->
               if folder.id == 0 then
                 []
               else
-                [(folder.name, NavigateTo (createQuery (Just folder.id) Nothing model.routerPayload))]
+                [(folder.name, Nothing)]
             _ -> []
         parts =
           case model.folder of
             Just folder ->
               List.filter (\fold -> fold.id /= 0) folder.breadcrumbs
-              |> List.map (\parent-> (parent.name, NavigateTo (createQuery (Just parent.id) Nothing model.routerPayload)))
+              |> List.map (\parent-> (parent.name, Just (NavigateTo (createQuery (Just parent.id) Nothing model.routerPayload))))
               |> List.reverse
             _ -> []
       in
@@ -372,7 +376,7 @@ view address model =
                 [ Ui.headerTitle [] [text "My Video Library"]
                 , Ui.SearchInput.view (address >>> Search) model.search
                 ]
-              , breadcrumbs address (node "span" [] [text "/"]) breadcrumbItems
+              , Ui.breadcrumbs address (node "span" [] [text "/"]) breadcrumbItems
               , FolderView.view
                 (address >>> FolderView)
                 { videoActions = videoActions address model
@@ -413,17 +417,6 @@ folderActions address base model =
     , onDelete = onClick address (DeleteFolder model.id)
     , onClick  = onClick address (NavigateTo query)
     }
-
-breadcrumbs : Signal.Address a -> Html.Html -> List (String, a) -> Html.Html
-breadcrumbs address separator items =
-  let
-    renderItem (label, action) =
-      node "ui-breadcrumb" [onClick address action]
-        [node "span" [] [text label]]
-  in
-    node "ui-breadcrumbs" []
-      (List.map renderItem items
-      |> List.intersperse separator)
 
 -- Routing functions
 routes : List (String, Hop.Payload -> Action)
@@ -528,7 +521,8 @@ app =
                    , inputs = [ Signal.dropRepeats router.signal
                               , Signal.map EscIsDown (Keyboard.isDown 27)
                               , Signal.map MouseIsDown Mouse.isDown
-                              , Signal.map SS model.search.mailbox.signal] }
+                              , model.mailbox.signal
+                              ] }
 
 main =
   app.html

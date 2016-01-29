@@ -30,7 +30,7 @@ init : Model
 init =
   { folders = []
   , videos = []
-  , loader = Ui.Loader.init 200 "normal"
+  , loader = Ui.Loader.init 200
   }
 
 setData : List Folder -> List Video -> Model -> Model
@@ -68,6 +68,7 @@ update action model =
       { model | videos = List.map (updatedItem id act) model.videos }
     Loader act ->
       { model | loader = Ui.Loader.update act model.loader }
+
 emptyView : Html.Html
 emptyView =
   node "video-library-folder-empty" []
@@ -107,7 +108,7 @@ view address viewModel model =
       else
         (folders ++ videos)
   in
-    node "video-library-folder" [] ([Ui.Loader.view model.loader] ++ contents)
+    node "video-library-folder" [] ((Ui.Loader.barView model.loader) :: contents)
 
 renderItems : Signal.Address Action -> (Item.Model -> Item.ViewModel)
             -> (Int -> Item.Action -> Action) -> List Item.Model -> List Html.Html
