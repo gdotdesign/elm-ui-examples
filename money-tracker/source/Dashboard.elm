@@ -113,9 +113,11 @@ view address viewModel model =
                       , compact = True
                       } []
       [ Ui.header []
-        [ Ui.headerTitle [] [text "Dashboard"]
-        , Ui.spacer
-        , Ui.icon "android-options" False [viewModel.optionsHandler]
+        [ Ui.Container.rowCenter []
+          [ Ui.headerTitle [] [text "Dashboard"]
+          , Ui.spacer
+          , Ui.headerIcon "android-options" False [viewModel.optionsHandler]
+          ]
         ]
       , Ui.panel [style [("flex", "1"),("overflow", "auto")]]
         [ Ui.Container.view { align = "stretch"

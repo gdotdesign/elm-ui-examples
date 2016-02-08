@@ -159,8 +159,10 @@ view address viewModel model =
                       , compact = True
                       } []
       [ Ui.header []
-        [ Ui.icon "android-arrow-back" False [viewModel.backHandler]
-        , Ui.headerTitle [] [text "Edit Transaction"]
+        [ Ui.Container.rowCenter []
+          [ Ui.headerIcon "android-arrow-back" False [viewModel.backHandler]
+          , Ui.headerTitle [] [text "Edit Transaction"]
+          ]
         ]
       , Ui.panel [classList [("money-track-form", True)]]
         [ Ui.Container.view { align = "stretch"

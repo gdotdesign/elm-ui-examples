@@ -27,17 +27,17 @@ type Action
 
 init : Model
 init =
-  { image = Ui.Input.init ""
-  , name = Ui.Input.init ""
-  , url = Ui.Input.init ""
+  { image = Ui.Input.init "" "Image URL..."
+  , name = Ui.Input.init "" "Name..."
+  , url = Ui.Input.init "" "Video URL..."
   , id = Nothing
   }
 
 fromVideo : Video -> Model
 fromVideo {id, image, name, url} =
-  { image = Ui.Input.init image
-  , name = Ui.Input.init name
-  , url = Ui.Input.init url
+  { image = Ui.Input.init image "Image URL..."
+  , name = Ui.Input.init name "Name..."
+  , url = Ui.Input.init url "Video URL..."
   , id = Just id
   }
 

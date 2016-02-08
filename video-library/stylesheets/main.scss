@@ -235,4 +235,11 @@ video-library-folder {
   flex: 1;
   overflow: auto;
   flex-wrap: wrap;
+
+  ui-loader {
+    position: absolute;
+    right: 0;
+    left: 0;
+    top: 0;
+  }
 }

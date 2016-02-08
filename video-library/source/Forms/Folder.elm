@@ -25,15 +25,15 @@ type Action
 
 init : Model
 init =
-  { image = Ui.Input.init ""
-  , name = Ui.Input.init ""
+  { image = Ui.Input.init "" "Image URL..."
+  , name = Ui.Input.init "" "Name..."
   , id = Nothing
   }
 
 fromFolder : Folder -> Model
 fromFolder {image, name, id} =
-  { image = Ui.Input.init image
-  , name = Ui.Input.init name
+  { image = Ui.Input.init image "Image URL..."
+  , name = Ui.Input.init name "Name..."
   , id = Just id
   }
 

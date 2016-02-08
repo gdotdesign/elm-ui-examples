@@ -24,8 +24,8 @@ type alias ViewModel =
 
 init : Model
 init =
-  { affix = Ui.Input.init ""
-  , prefix = Ui.Input.init ""
+  { affix = Ui.Input.init "" "Affix..."
+  , prefix = Ui.Input.init "" "Prefix..."
   }
 
 update: Action -> Model -> (Model, Effects.Effects Action)
@@ -49,8 +49,10 @@ view address viewModel model =
                     , compact = True
                     } []
     [ Ui.header []
-      [ Ui.icon "android-arrow-back" False [viewModel.backHandler]
-      , Ui.headerTitle [] [text "Settings"]
+      [ Ui.Container.rowCenter []
+        [ Ui.headerIcon "android-arrow-back" False [viewModel.backHandler]
+        , Ui.headerTitle [] [text "Settings"]
+        ]
       ]
     , Ui.panel []
       [ Ui.Container.view { align = "stretch"

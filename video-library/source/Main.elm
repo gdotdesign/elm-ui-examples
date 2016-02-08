@@ -373,8 +373,12 @@ view address model =
                             , direction = "column"
                             , compact = True } []
               [ Ui.header []
-                [ Ui.headerTitle [] [text "My Video Library"]
-                , Ui.SearchInput.view (address >>> Search) model.search
+                [ Ui.Container.view { align = "center"
+                                    , direction = "row"
+                                    , compact = False }[]
+                  [ Ui.headerTitle [] [text "My Video Library"]
+                  , Ui.SearchInput.view (address >>> Search) model.search
+                  ]
                 ]
               , Ui.breadcrumbs address (node "span" [] [text "/"]) breadcrumbItems
               , FolderView.view

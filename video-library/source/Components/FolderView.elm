@@ -30,7 +30,7 @@ init : Model
 init =
   { folders = []
   , videos = []
-  , loader = Ui.Loader.init 200
+  , loader = Ui.Loader.init 100
   }
 
 setData : List Folder -> List Video -> Model -> Model
