@@ -13,6 +13,7 @@ import Html exposing (text)
 
 import Ui.NumberPad
 import Ui.Chooser
+import Ui.Header
 import Ui.DatePicker
 import Ui.Container
 import Ui
@@ -158,11 +159,9 @@ view address viewModel model =
                       , direction = "column"
                       , compact = True
                       } []
-      [ Ui.header []
-        [ Ui.Container.rowCenter []
-          [ Ui.headerIcon "android-arrow-back" False [viewModel.backHandler]
-          , Ui.headerTitle [] [text "Edit Transaction"]
-          ]
+      [ Ui.Header.view []
+        [ Ui.Header.icon "android-arrow-back" False [viewModel.backHandler]
+        , Ui.Header.title [] [text "Edit Transaction"]
         ]
       , Ui.panel [classList [("money-track-form", True)]]
         [ Ui.Container.view { align = "stretch"

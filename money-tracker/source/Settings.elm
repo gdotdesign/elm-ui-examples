@@ -5,7 +5,9 @@ import Effects
 
 import Html.Events exposing (onClick)
 import Html exposing (text)
+
 import Ui.Container
+import Ui.Header
 import Ui.Input
 import Ui
 
@@ -48,11 +50,9 @@ view address viewModel model =
                     , direction = "column"
                     , compact = True
                     } []
-    [ Ui.header []
-      [ Ui.Container.rowCenter []
-        [ Ui.headerIcon "android-arrow-back" False [viewModel.backHandler]
-        , Ui.headerTitle [] [text "Settings"]
-        ]
+    [ Ui.Header.view []
+      [ Ui.Header.icon "android-arrow-back" False [viewModel.backHandler]
+      , Ui.Header.title [] [text "Settings"]
       ]
     , Ui.panel []
       [ Ui.Container.view { align = "stretch"

@@ -20,6 +20,7 @@ import Ui.NotificationCenter
 import Ui.DropdownMenu
 import Ui.SearchInput
 import Ui.Container
+import Ui.Header
 import Ui.App
 import Ui
 
@@ -372,13 +373,10 @@ view address model =
         [ Ui.Container.view { align = "stretch"
                             , direction = "column"
                             , compact = True } []
-              [ Ui.header []
-                [ Ui.Container.view { align = "center"
-                                    , direction = "row"
-                                    , compact = False }[]
-                  [ Ui.headerTitle [] [text "My Video Library"]
-                  , Ui.SearchInput.view (address >>> Search) model.search
-                  ]
+              [ Ui.Header.view []
+                [ Ui.Header.title [] [text "My Video Library"]
+                , Ui.spacer
+                , Ui.SearchInput.view (address >>> Search) model.search
                 ]
               , Ui.breadcrumbs address (node "span" [] [text "/"]) breadcrumbItems
               , FolderView.view

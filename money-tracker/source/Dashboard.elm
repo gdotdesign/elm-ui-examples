@@ -12,6 +12,7 @@ import Html exposing (div, text, table, tr, td)
 
 import Ui.Charts.Bar
 import Ui.Container
+import Ui.Header
 import Ui
 
 import Types exposing (..)
@@ -112,12 +113,10 @@ view address viewModel model =
                       , direction = "column"
                       , compact = True
                       } []
-      [ Ui.header []
-        [ Ui.Container.rowCenter []
-          [ Ui.headerTitle [] [text "Dashboard"]
-          , Ui.spacer
-          , Ui.headerIcon "android-options" False [viewModel.optionsHandler]
-          ]
+      [ Ui.Header.view []
+        [ Ui.Header.title [] [text "Dashboard"]
+        , Ui.spacer
+        , Ui.Header.icon "android-options" False [viewModel.optionsHandler]
         ]
       , Ui.panel [style [("flex", "1"),("overflow", "auto")]]
         [ Ui.Container.view { align = "stretch"
