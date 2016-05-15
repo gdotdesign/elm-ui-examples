@@ -1,176 +1,157 @@
 module Main exposing (..)
 
-import Ui.Native.LocalStorage as LocalStorage
+import Update.Extra.Infix exposing ((:>))
+import Debug exposing (log)
 import Ext.Date
 import Task
+import Date
 
 import Html.Attributes exposing (classList)
 import Html.Events.Extra exposing (onStop)
-import Html.Events exposing (onClick)
 import Html exposing (div, text, node)
+import Html.Events exposing (onClick)
 import Html.App
 
-import Json.Encode
 import Json.Decode as Json
+import Json.Encode
+
 import Native.Uid
 
+import Ui.Native.LocalStorage as LocalStorage
 import Ui.Container
-import Ui.App
 import Ui.Pager
+import Ui.App
 import Ui
-
-import Debug exposing (log)
 
 import Types as Types exposing (..)
 import Dashboard as Dashboard
 import Settings as Settings
 import Form as Form
 
-type Action
-  = App Ui.App.Msg
+
+type Msg
+  = Dashboard Dashboard.Msg
+  | Settings Settings.Msg
   | Pager Ui.Pager.Msg
-  | Dashboard Dashboard.Msg
-  | Settings Settings.Action
   | Form Form.Msg
+  | App Ui.App.Msg
   | SelectPage Int
-  | Load String
   | Error String
+  | Load String
+  | SaveStore
   | Saved
   | Save
   | NoOp
 
-initialCategories : List Category
-initialCategories =
-  [ { id = "0", name = "Bills", icon = "cash" }
-  , { id = "1", name = "Transportation", icon = "android-bus" }
-  , { id = "2", name = "Food", icon = "android-cart" }
-  ]
 
-populateForm date amount model =
-  { model | form = Form.populate model.store date amount model.form }
-
-populateSettings model =
-  { model | settings = Settings.populate model.store.settings model.settings }
-
+{-| Representation of a money tracker application.
+-}
 type alias Model =
-  { app : Ui.App.Model
-  , pager : Ui.Pager.Model
-  , dashboard : Dashboard.Model
+  { dashboard : Dashboard.Model
   , settings : Settings.Model
+  , pager : Ui.Pager.Model
+  , app : Ui.App.Model
   , form : Form.Model
   , store : Store
   }
 
-init : (Model, Cmd Action)
+
+{-| Initializes a money tracker.
+-}
+init : ( Model, Cmd Msg )
 init =
-  ({ app = Ui.App.init "MoneyTrack"
-   , pager = Ui.Pager.init 0
-   , dashboard = Dashboard.init
-   , settings = Settings.init
-   , form = Form.init
-   , store = { categories = initialCategories
-             , transactions = []
-             , settings = { prefix = "", affix = "" }
-             , accounts = [ { id = "0"
-                            , initialBalance = 0
-                            , name = "Bank Card"
-                            , icon = ""
-                            }
-                          , { id = "1"
-                            , initialBalance = 0
-                            , name = "Cash"
-                            , icon = ""
-                            }
-                          ]
-             }
-   }, Task.perform Error Load (LocalStorage.getItem "moneytrack-data"))
-
-view model =
-  Ui.App.view App model.app
-    [ div [classList [("money-track", True)]]
-      [ Ui.Pager.view
-          Pager
-          [ dashboard model
-          , form model
-          , settings model
-          ]
-          model.pager
+  let
+    initialCategories =
+      [ { id = "0", name = "Transportation", icon = "android-bus" }
+      , { id = "1", name = "Food", icon = "android-cart" }
+      , { id = "2", name = "Bills", icon = "cash" }
       ]
-    ]
 
-settings model =
-  let
-    viewModel =
-      { backHandler = onClick (SelectPage 0) }
-  in
-    Settings.view Settings viewModel model.settings
+    initialAccounts =
+      [ { initialBalance = 0
+        , name = "Bank Card"
+        , icon = ""
+        , id = "0"
+        }
+      , { initialBalance = 0
+        , name = "Cash"
+        , icon = ""
+        , id = "1"
+        }
+      ]
 
-dashboard model =
-  let
-    viewModel =
-      { optionsMsg = SelectPage 2
-      , addMsg = SelectPage 1
-      , transactions = model.store.transactions
-      , settings = model.store.settings
-      , categories = model.store.categories
+    model =
+      { app = Ui.App.init "MoneyTrack"
+      , dashboard = Dashboard.init
+      , settings = Settings.init
+      , pager = Ui.Pager.init 0
+      , form = Form.init
+      , store =
+          { settings = { prefix = "", affix = "" }
+          , categories = initialCategories
+          , accounts = initialAccounts
+          , transactions = []
+          }
       }
   in
-    Dashboard.view Dashboard viewModel model.dashboard
+    ( model, Task.perform Error Load (LocalStorage.getItem "moneytrack-data") )
 
-form model =
-  let
-    viewModel =
-      { bottomLeft = div [onStop "mousedown" (SelectPage 0)] [Ui.icon "close" False []]
-      , bottomRight = div [onStop "mousedown" Save] [Ui.icon "checkmark" False []]
-      , backMsg = SelectPage 0
-      }
-  in
-    Form.view Form viewModel model.form
 
-updateSettings model =
-  { model | store = updateStoreSettings { affix = model.settings.affix.value
-                                        , prefix = model.settings.prefix.value
-                                        } model.store }
+{-| Updates a money tracker.
+-}
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+  case msg of
+    {- Sub components. -}
+    Dashboard act ->
+      ( { model | dashboard = Dashboard.update act model.dashboard }, Cmd.none )
 
-saveStore model =
-  let
-    task =
-      LocalStorage.setItem
-        "moneytrack-data"
-        (Json.Encode.encode 0 (storeEncoder model.store))
-  in
-    Task.perform Error (\_ -> Saved) task
+    Pager act ->
+      ( { model | pager = Ui.Pager.update act model.pager }, Cmd.none )
 
-update action model =
-  case action of
     Form act ->
       let
-        (form, effect) = Form.update act model.form
+        ( form, effect ) =
+          Form.update act model.form
       in
-        ({ model | form = form }, Cmd.map Form effect)
-    Dashboard act ->
-      ({ model | dashboard = Dashboard.update act model.dashboard }, Cmd.none)
+        ( { model | form = form }, Cmd.map Form effect )
+
     Settings act ->
       let
-        (settings, effect) = Settings.update act model.settings
+        ( settings, effect ) =
+          Settings.update act model.settings
       in
-      ({ model | settings = settings }
-         |> updateSettings, Cmd.batch [ Cmd.map Settings effect
-                                      , saveStore model])
+        ( updateSettings { model | settings = settings }
+        , Cmd.map Settings effect
+        )
+
     App act ->
       let
-        (app, effect) = Ui.App.update act model.app
+        ( app, effect ) =
+          Ui.App.update act model.app
       in
-        ({ model | app = app }, Cmd.map App effect)
-    Pager act ->
-      ({ model | pager = Ui.Pager.update act model.pager }, Cmd.none)
+        ( { model | app = app }, Cmd.map App effect )
 
+    {- Updates -}
     SelectPage page ->
-      (selectPage page model, Cmd.none)
+      let
+        pager =
+          Ui.Pager.select page model.pager
+
+        updatedModel =
+          { model | pager = pager }
+      in
+        case page of
+          1 ->
+            ( populateForm 0 (Ext.Date.now ()) updatedModel, Cmd.none )
+
+          _ ->
+            ( updatedModel, Cmd.none )
 
     Save ->
       let
-        formData = Form.data model.store model.form
+        formData =
+          Form.data model.store model.form
 
         transaction data =
           { id = Native.Uid.uid Nothing
@@ -181,50 +162,166 @@ update action model =
           , comment = data.comment
           }
 
+        updatedModel =
+          { model | store = updatedStore model.store }
+
         updatedStore store =
           { store | transactions = transactions }
 
         transactions =
           case formData of
             Just data ->
-              model.store.transactions ++ [transaction data]
-            _ -> model.store.transactions
-      in
-        ({ model | store = updatedStore model.store }
-        |> selectPage 0, saveStore model)
+              model.store.transactions ++ [ transaction data ]
 
+            _ ->
+              model.store.transactions
+      in
+        ( updatedModel, Cmd.none )
+          :> update (SelectPage 0)
+          :> update SaveStore
+
+    {- Persistence -}
     Load data ->
       let
         store =
-          case Json.decodeString storeDecoder data of
-            Ok s -> s
-            Err msg -> log msg model.store
+          case Json.decodeString decodeStore data of
+            Ok decodedStore ->
+              let
+                _ =
+                  log "Info" "Loaded store from local storage."
+              in
+                decodedStore
+
+            Err message ->
+              let
+                _ =
+                  log "Error decoding store:" message
+              in
+                model.store
       in
-        ({ model | store = store } |> populateSettings, Cmd.none)
+        ( populateSettings { model | store = store }, Cmd.none )
 
     Saved ->
-      (log "Saved..." model, Cmd.none)
-    _ ->
-      (model, Cmd.none)
+      let
+        _ =
+          log "Info" "Store saved in local storage."
+      in
+        ( model, Cmd.none )
 
-selectPage page model =
+    SaveStore ->
+      let
+        task =
+          LocalStorage.setItem
+            "moneytrack-data"
+            (Json.Encode.encode 0 (encodeStore model.store))
+      in
+        ( model, Task.perform Error (\_ -> Saved) task )
+
+    Error message ->
+      let
+        _ =
+          log "Error" message
+      in
+        ( model, Cmd.none )
+
+    NoOp ->
+      ( model, Cmd.none )
+
+
+{-| Renders a money tracker.
+-}
+view : Model -> Html.Html Msg
+view model =
   let
-    pager =
-      Ui.Pager.select page model.pager
+    settings =
+      let
+        viewModel =
+          { backMsg = SelectPage 0 }
+      in
+        Settings.view Settings viewModel model.settings
 
-    updatedModel =
-      { model | pager = pager }
+    dashboard =
+      let
+        viewModel =
+          { transactions = model.store.transactions
+          , categories = model.store.categories
+          , settings = model.store.settings
+          , optionsMsg = SelectPage 2
+          , addMsg = SelectPage 1
+          }
+      in
+        Dashboard.view Dashboard viewModel model.dashboard
+
+    form =
+      let
+        bottomLeft =
+          div [ onStop "mousedown" (SelectPage 0) ] [ Ui.icon "close" False [] ]
+
+        bottomRight =
+          div [ onStop "mousedown" Save ] [ Ui.icon "checkmark" False [] ]
+
+        viewModel =
+          { bottomRight = bottomRight
+          , bottomLeft = bottomLeft
+          , backMsg = SelectPage 0
+          }
+      in
+        Form.view Form viewModel model.form
   in
-    case page of
-      1 ->
-        populateForm 0 (Ext.Date.now ()) updatedModel
-      _ ->
-        updatedModel
+    Ui.App.view
+      App
+      model.app
+      [ div
+          [ classList [ ( "money-track", True ) ] ]
+          [ Ui.Pager.view
+              Pager
+              [ dashboard
+              , form
+              , settings
+              ]
+              model.pager
+          ]
+      ]
 
+
+{-| Populates the form with the given parameters.
+-}
+populateForm : Int -> Date.Date -> Model -> Model
+populateForm amount date model =
+  { model | form = Form.populate model.store amount date model.form }
+
+
+{-| Populates the settings component from the store.
+-}
+populateSettings : Model -> Model
+populateSettings model =
+  { model | settings = Settings.populate model.store.settings model.settings }
+
+
+{-| Updates settings object from the settings component.
+-}
+updateSettings : Model -> Model
+updateSettings model =
+  { model
+    | store =
+        updateStoreSettings
+          { prefix = model.settings.prefix.value
+          , affix = model.settings.affix.value
+          }
+          model.store
+  }
+
+
+gatherSubs : Model -> Sub Msg
+gatherSubs model =
+  Sub.batch [ Sub.map Form (Form.subscriptions model.form) ]
+
+
+main : Program Never
 main =
   Html.App.program
     { init = init
     , view = view
     , update = update
-    , subscriptions = \model -> Sub.batch [Sub.map Form (Form.subscriptions model.form)]
+    , subscriptions = gatherSubs
     }

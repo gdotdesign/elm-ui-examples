@@ -96,6 +96,9 @@ view address viewModel model =
     breakdown =
       List.map (renderCategory transactions) viewModel.categories
 
+    month =
+      format (DateConfigs.getConfig "en_us") "%B, %Y" model.date
+
     {- Month indicator. -}
     monthIndicator =
       Ui.Container.row
@@ -103,7 +106,7 @@ view address viewModel model =
         [ Ui.icon "chevron-left" True [ onClick (address PreviousDate) ]
         , div
             [ class "mt-dashboard-month"]
-            [ text (format (DateConfigs.getConfig "en_us") "%B, %Y" model.date) ]
+            [ text month ]
         , Ui.icon "chevron-right" True [ onClick (address NextDate) ]
         ]
 

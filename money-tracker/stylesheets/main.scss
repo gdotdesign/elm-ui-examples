@@ -59,3 +59,24 @@
   	flex: 1;
   }
 }
+
+ui-app {
+
+  @media (min-width: 500px) {
+    border: 10px solid #333;
+    box-sizing: content-box;
+    margin-left: -250px;
+    margin-top: -350px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+  }
+}
+
+.money-track,
+ui-app,
+ui-pager {
+  max-width: 500px;
+  max-height: 700px;
+}
+

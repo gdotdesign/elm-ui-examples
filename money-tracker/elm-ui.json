@@ -9,7 +9,8 @@
   ],
   "exposed-modules": [],
   "dependencies": {
-    "elm-community/elm-json-extra": "1.0.0 <= v < 2.0.0"
+    "elm-community/elm-json-extra": "1.0.0 <= v < 2.0.0",
+    "ccapndave/elm-update-extra": "1.0.0 <= v < 2.0.0"
   },
   "elm-version": "0.17.0 <= v < 0.18.0"
 }

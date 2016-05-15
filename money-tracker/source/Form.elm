@@ -1,6 +1,6 @@
 module Form exposing (..)
 
-{-| Form for editing / creating transMsgs.
+{-| Form for editing / creating transactions.
 -}
 
 import List.Extra
@@ -238,7 +238,10 @@ view address viewModel model =
       []
       [ Ui.Header.view
           []
-          [ Ui.Header.icon "android-arrow-back" False [ onClick viewModel.backMsg ]
+          [ Ui.Header.icon
+              "android-arrow-back"
+              False
+              [ onClick viewModel.backMsg ]
           , Ui.Header.title [] [ text "Add Transation" ]
           ]
       , Ui.panel
