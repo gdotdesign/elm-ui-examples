@@ -1,9 +1,11 @@
-module Types where
+module Types exposing (..)
 
 import Json.Encode as J
 import Json.Decode.Extra as JsonExtra
 import Json.Decode as Json exposing ((:=))
-import Date.Format exposing (format)
+
+import Date.Extra.Config.Configs as DateConfigs
+import Date.Extra.Format exposing (format)
 import Date
 
 {- Represents a transaction. -}
@@ -32,7 +34,7 @@ transactionEncoder transaction =
     , ("comment", J.string transaction.comment)
     , ("categoryId", J.string transaction.categoryId)
     , ("accountId", J.string transaction.accountId)
-    , ("date", J.string (format "%Y-%m-%d" transaction.date))
+    , ("date", J.string (format (DateConfigs.getConfig "en_us") "%Y-%m-%d" transaction.date))
     ]
 
 {- Represents a category. -}

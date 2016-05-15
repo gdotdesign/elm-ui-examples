@@ -1,10 +1,8 @@
-module Settings where
-
-import Signal exposing (forwardTo)
-import Effects
+module Settings exposing (..)
 
 import Html.Events exposing (onClick)
 import Html exposing (text)
+import Html.App
 
 import Ui.Container
 import Ui.Header
@@ -17,11 +15,11 @@ type alias Model =
   }
 
 type Action
-  = Affix Ui.Input.Action
-  | Prefix Ui.Input.Action
+  = Affix Ui.Input.Msg
+  | Prefix Ui.Input.Msg
 
-type alias ViewModel =
-  { backHandler : Html.Attribute
+type alias ViewModel msg =
+  { backHandler : Html.Attribute msg
   }
 
 init : Model
@@ -30,41 +28,41 @@ init =
   , prefix = Ui.Input.init "" "Prefix..."
   }
 
-update: Action -> Model -> (Model, Effects.Effects Action)
+update : Action -> Model -> (Model, Cmd Action)
 update action model =
   case action of
     Affix act ->
       let
         (affix, effect) = Ui.Input.update act model.affix
       in
-        ({ model | affix = affix }, Effects.map Affix effect)
+        ({ model | affix = affix }, Cmd.map Affix effect)
     Prefix act ->
       let
         (prefix, effect) = Ui.Input.update act model.prefix
       in
-        ({ model | prefix = prefix }, Effects.map Prefix effect)
+        ({ model | prefix = prefix }, Cmd.map Prefix effect)
 
-view: Signal.Address Action -> ViewModel -> Model -> Html.Html
+view : (Action -> msg) -> ViewModel msg -> Model -> Html.Html msg
 view address viewModel model =
-  Ui.Container.view { align = "stretch"
-                    , direction = "column"
-                    , compact = True
-                    } []
+  Ui.Container.render { align = "stretch"
+                      , direction = "column"
+                      , compact = True
+                      } []
     [ Ui.Header.view []
       [ Ui.Header.icon "android-arrow-back" False [viewModel.backHandler]
       , Ui.Header.title [] [text "Settings"]
       ]
     , Ui.panel []
-      [ Ui.Container.view { align = "stretch"
+      [ Ui.Container.render { align = "stretch"
                     , direction = "column"
                     , compact = False
                     } []
-        [ Ui.inputGroup "Currency Affix" (Ui.Input.view (forwardTo address Affix) model.affix)
-        , Ui.inputGroup "Currency Prefix" (Ui.Input.view (forwardTo address Prefix) model.prefix)
+        [ Ui.inputGroup "Currency Affix" (Html.App.map (address << Affix) (Ui.Input.view model.affix))
+        , Ui.inputGroup "Currency Prefix" (Html.App.map (address << Prefix) (Ui.Input.view model.prefix))
         ]
       ]
     ]
 
 populate settings model =
-  { model | affix = fst (Ui.Input.setValue settings.affix model.affix)
-          , prefix = fst (Ui.Input.setValue settings.prefix model.prefix) }
+  { model | affix = Ui.Input.setValue settings.affix model.affix
+          , prefix = Ui.Input.setValue settings.prefix model.prefix }

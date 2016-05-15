@@ -1,21 +1,18 @@
-module Main where
+module Main exposing (..)
 
-import StartApp
-import Effects
-import Signal exposing (forwardTo)
-import Task
-import Storage.Local
+import Ui.Native.LocalStorage as LocalStorage
 import Ext.Date
+import Task
 
 import Html.Attributes exposing (classList)
-import Html.Extra exposing (onStop)
+import Html.Events.Extra exposing (onStop)
 import Html.Events exposing (onClick)
 import Html exposing (div, text, node)
+import Html.App
 
 import Json.Encode
 import Json.Decode as Json
 import Native.Uid
-import Window
 
 import Ui.Container
 import Ui.App
@@ -30,13 +27,15 @@ import Settings as Settings
 import Form as Form
 
 type Action
-  = App Ui.App.Action
-  | Pager Ui.Pager.Action
-  | Dashboard Dashboard.Action
+  = App Ui.App.Msg
+  | Pager Ui.Pager.Msg
+  | Dashboard Dashboard.Msg
   | Settings Settings.Action
-  | Form Form.Action
+  | Form Form.Msg
   | SelectPage Int
-  | Load
+  | Load String
+  | Error String
+  | Saved
   | Save
   | NoOp
 
@@ -59,84 +58,74 @@ type alias Model =
   , dashboard : Dashboard.Model
   , settings : Settings.Model
   , form : Form.Model
-  , mailbox : Signal.Mailbox Action
   , store : Store
   }
 
-init : (Model, Effects.Effects Action)
+init : (Model, Cmd Action)
 init =
-  let
-    mailbox = Signal.mailbox NoOp
-  in
-    ({ app = Ui.App.init "MoneyTrack"
-     , pager = Ui.Pager.init 0
-     , dashboard = Dashboard.init
-     , settings = Settings.init
-     , mailbox = mailbox
-     , form = Form.init (forwardTo mailbox.address Form)
-     , store = { categories = initialCategories
-               , transactions = []
-               , settings = { prefix = "", affix = "" }
-               , accounts = [ { id = "0"
-                              , initialBalance = 0
-                              , name = "Bank Card"
-                              , icon = ""
-                              }
-                            , { id = "1"
-                              , initialBalance = 0
-                              , name = "Cash"
-                              , icon = ""
-                              }
-                            ]
-               }
-     }, Effects.task (Task.succeed Load))
+  ({ app = Ui.App.init "MoneyTrack"
+   , pager = Ui.Pager.init 0
+   , dashboard = Dashboard.init
+   , settings = Settings.init
+   , form = Form.init
+   , store = { categories = initialCategories
+             , transactions = []
+             , settings = { prefix = "", affix = "" }
+             , accounts = [ { id = "0"
+                            , initialBalance = 0
+                            , name = "Bank Card"
+                            , icon = ""
+                            }
+                          , { id = "1"
+                            , initialBalance = 0
+                            , name = "Cash"
+                            , icon = ""
+                            }
+                          ]
+             }
+   }, Task.perform Error Load (LocalStorage.getItem "moneytrack-data"))
 
-view address model =
-  Ui.App.view (forwardTo address App) model.app
+view model =
+  Ui.App.view App model.app
     [ div [classList [("money-track", True)]]
-      [ Ui.Pager.view (forwardTo address Pager)
-          [ dashboard address model
-          , form address model
-          , settings address model
+      [ Ui.Pager.view
+          Pager
+          [ dashboard model
+          , form model
+          , settings model
           ]
           model.pager
       ]
     ]
 
-settings address model =
+settings model =
   let
     viewModel =
-      { backHandler = onClick address (SelectPage 0) }
+      { backHandler = onClick (SelectPage 0) }
   in
-    Settings.view (forwardTo address Settings) viewModel model.settings
+    Settings.view Settings viewModel model.settings
 
-dashboard address model =
+dashboard model =
   let
     viewModel =
-      { optionsHandler = onStop "mousedown" address (SelectPage 2)
-      , formHandler = onStop "mousedown" address (SelectPage 1)
+      { optionsMsg = SelectPage 2
+      , addMsg = SelectPage 1
       , transactions = model.store.transactions
       , settings = model.store.settings
       , categories = model.store.categories
       }
   in
-    Dashboard.view (forwardTo address Dashboard) viewModel model.dashboard
+    Dashboard.view Dashboard viewModel model.dashboard
 
-form address model =
+form model =
   let
     viewModel =
-      { bottomLeft = div [onStop "mousedown" address (SelectPage 0)] [Ui.icon "close" False []]
-      , bottomRight = div [onStop "mousedown" address Save] [Ui.icon "checkmark" False []]
-      , backHandler = onStop "mousedown" address (SelectPage 0)
+      { bottomLeft = div [onStop "mousedown" (SelectPage 0)] [Ui.icon "close" False []]
+      , bottomRight = div [onStop "mousedown" Save] [Ui.icon "checkmark" False []]
+      , backMsg = SelectPage 0
       }
   in
-    Form.view (forwardTo address Form) viewModel model.form
-
-update action model =
-  let
-    (updatedModel, effect) = update' action model
-  in
-    (updatedModel |> saveStore, effect)
+    Form.view Form viewModel model.form
 
 updateSettings model =
   { model | store = updateStoreSettings { affix = model.settings.affix.value
@@ -144,40 +133,41 @@ updateSettings model =
                                         } model.store }
 
 saveStore model =
-  case Storage.Local.setItem "moneytrack-data" (Json.Encode.encode 0 (storeEncoder model.store)) of
-    _ -> model
+  let
+    task =
+      LocalStorage.setItem
+        "moneytrack-data"
+        (Json.Encode.encode 0 (storeEncoder model.store))
+  in
+    Task.perform Error (\_ -> Saved) task
 
-update' action model =
+update action model =
   case action of
     Form act ->
       let
         (form, effect) = Form.update act model.form
       in
-        ({ model | form = form }, Effects.map Form effect)
+        ({ model | form = form }, Cmd.map Form effect)
     Dashboard act ->
-      ({ model | dashboard = Dashboard.update act model.dashboard }, Effects.none)
+      ({ model | dashboard = Dashboard.update act model.dashboard }, Cmd.none)
     Settings act ->
       let
         (settings, effect) = Settings.update act model.settings
       in
       ({ model | settings = settings }
-         |> updateSettings, Effects.map Settings effect)
+         |> updateSettings, Cmd.batch [ Cmd.map Settings effect
+                                      , saveStore model])
     App act ->
       let
         (app, effect) = Ui.App.update act model.app
       in
-        ({ model | app = app }, Effects.map App effect)
+        ({ model | app = app }, Cmd.map App effect)
     Pager act ->
-      ({ model | pager = Ui.Pager.update act model.pager }, Effects.none)
+      ({ model | pager = Ui.Pager.update act model.pager }, Cmd.none)
+
     SelectPage page ->
-      let
-        pager = Ui.Pager.select page model.pager
-      in
-        case page of
-          1 ->
-            ({ model | pager = pager } |> populateForm 0 (Ext.Date.now ()), Effects.none)
-          _ ->
-            ({ model | pager = pager }, Effects.none)
+      (selectPage page model, Cmd.none)
+
     Save ->
       let
         formData = Form.data model.store model.form
@@ -194,39 +184,47 @@ update' action model =
         updatedStore store =
           { store | transactions = transactions }
 
-        (transactions, effect) =
+        transactions =
           case formData of
             Just data ->
-              (model.store.transactions ++ [transaction data], Effects.task (Task.succeed (SelectPage 0)))
-            _ -> (model.store.transactions, Effects.none)
+              model.store.transactions ++ [transaction data]
+            _ -> model.store.transactions
       in
-        ({ model | store = updatedStore model.store }, effect)
-    Load ->
-      case (Storage.Local.getItem "moneytrack-data") of
-        Ok data ->
-          let
-            store =
-              case Json.decodeString storeDecoder data of
-                Ok s -> s
-                Err msg -> log msg model.store
-          in
-            ({ model | store = store } |> populateSettings, Effects.none)
-        Err msg -> (model, Effects.none)
-    _ ->
-      (model, Effects.none)
+        ({ model | store = updatedStore model.store }
+        |> selectPage 0, saveStore model)
 
-app =
+    Load data ->
+      let
+        store =
+          case Json.decodeString storeDecoder data of
+            Ok s -> s
+            Err msg -> log msg model.store
+      in
+        ({ model | store = store } |> populateSettings, Cmd.none)
+
+    Saved ->
+      (log "Saved..." model, Cmd.none)
+    _ ->
+      (model, Cmd.none)
+
+selectPage page model =
   let
-    (initial, effect) = init
+    pager =
+      Ui.Pager.select page model.pager
+
+    updatedModel =
+      { model | pager = pager }
   in
-    StartApp.start { init = (initial, effect)
-                   , view = view
-                   , update = update
-                   , inputs = [initial.mailbox.signal] }
+    case page of
+      1 ->
+        populateForm 0 (Ext.Date.now ()) updatedModel
+      _ ->
+        updatedModel
 
 main =
-  app.html
-
-port tasks : Signal (Task.Task Effects.Never ())
-port tasks =
-  app.tasks
+  Html.App.program
+    { init = init
+    , view = view
+    , update = update
+    , subscriptions = \model -> Sub.batch [Sub.map Form (Form.subscriptions model.form)]
+    }
