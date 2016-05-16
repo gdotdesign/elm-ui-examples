@@ -3,8 +3,8 @@ module Main exposing (..)
 import Html exposing (node, text)
 import Html.App
 
+import Ui.Helpers.Emitter as Emitter
 import Ui.NotificationCenter
-import Ui.SearchInput
 import Ui.Container
 import Ui.Layout
 import Ui.Header
@@ -36,12 +36,12 @@ type alias Model =
 type Msg
   = NoOp
   | Notifications Ui.NotificationCenter.Msg
-  | SearchInput Ui.SearchInput.Msg
   | App Ui.App.Msg
   | Folder Folder.Msg
   | FolderModal (Modal.Action Folder FolderForm.Msg)
   | VideoModal (Modal.Action Video VideoForm.Msg)
   | Player Player.Msg
+  | Notify String
 
 init : Model
 init =
@@ -56,6 +56,8 @@ init =
                              , isNew = FolderForm.isNew
                              , init = FolderForm.init
                              , view = FolderForm.view
+                             , newTexts = ("Add New Folder", "Add")
+                             , editTexts = ("Edit Folder", "Save")
                              , id = .id
                              , get = Types.fetchFolder
                              , patch = Types.patchFolder
@@ -68,6 +70,8 @@ init =
                             , isNew = VideoForm.isNew
                             , init = VideoForm.init
                             , view = VideoForm.view
+                            , newTexts = ("Add New Video", "Add")
+                            , editTexts = ("Edit Video", "Save")
                             , id = .id
                             , get = Types.fetchVideo
                             , patch = Types.patchVideo
@@ -78,6 +82,13 @@ init =
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case log "a" msg of
+    Notify message ->
+      let
+        (notifications, effect) =
+          Ui.NotificationCenter.notify (text message) model.notifications
+      in
+        ({ model | notifications = notifications }, Cmd.map Notifications effect)
+
     Folder act ->
       let
         (folder, cmd) = Folder.update act model.folder
@@ -101,6 +112,12 @@ update msg model =
         (videoModal, cmd) = Modal.update act model.videoModal
       in
         ({ model | videoModal = videoModal }, Cmd.map VideoModal cmd)
+
+    Notifications act ->
+      let
+        (notifications, cmd) = Ui.NotificationCenter.update act model.notifications
+      in
+        ({ model | notifications = notifications }, Cmd.map Notifications cmd)
 
     App act ->
       let
@@ -136,5 +153,6 @@ main =
       , subscriptions = \model -> Sub.batch [ Sub.map Folder (Folder.subscriptions model.folder)
                                             , Sub.map Player Player.subscriptions
                                             , Sub.map VideoModal (Modal.subscriptions "video")
-                                            , Sub.map FolderModal (Modal.subscriptions "folder") ]
+                                            , Sub.map FolderModal (Modal.subscriptions "folder")
+                                            , Emitter.listenString "errors" Notify ]
       }

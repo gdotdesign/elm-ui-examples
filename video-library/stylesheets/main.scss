@@ -1,3 +1,5 @@
+$primary: #393E46;
+
 @import 'ui';
 
 video-library-item {
@@ -186,6 +188,7 @@ video-library-video {
     padding-bottom: 30px;
     font-size: 26px;
     border-bottom: 1px solid rgba(#FFF, 0.15);
+    margin-bottom: 30px;
 
     strong {
       flex: 1;

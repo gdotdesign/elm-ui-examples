@@ -25,19 +25,13 @@ type alias Functions model entity msg =
   , isNew : model -> Bool
   , init : model
   , id : entity -> Int
+  , editTexts: (String, String)
+  , newTexts: (String, String)
   , view : model -> Html.Html msg
   , get : Int -> (String -> Action entity msg) -> (entity -> Action entity msg) -> Cmd (Action entity msg)
   , patch : Int -> List (String, J.Value) -> (String -> Action entity msg) -> (entity -> Action entity msg) -> Cmd (Action entity msg)
   , create : List (String, J.Value) -> (String -> Action entity msg ) -> (entity -> Action entity msg) -> Cmd (Action entity msg)
   }
-
-{-type alias ViewModel action model msg =
-  { view : model -> Html.Html msg
-  , saveTexts : (String, String)
-  , newTexts : (String, String)
-  , action : action
-  }
--}
 
 type Action entity msg
   = Modal Ui.Modal.Msg
@@ -136,9 +130,9 @@ view model =
   let
     (title, button) =
       if model.functions.isNew model.form then
-        ("new","create")--viewModel.newTexts
+        model.functions.newTexts
       else
-        ("edit","save")--viewModel.saveTexts
+        model.functions.editTexts
   in
     Ui.Modal.view
       Modal

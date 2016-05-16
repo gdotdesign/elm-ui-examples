@@ -33,6 +33,7 @@ type Msg
   | Folder Int Item.Msg
   | Error String
   | Loaded FolderContents
+  | FinishLoading
   | CreateVideo
   | CreateFolder
   | Open Int
@@ -60,9 +61,10 @@ init =
 subscriptions : Model -> Sub Msg
 subscriptions model =
   let
-    emitterSubs =
+    basicSubs =
       [ Emitter.listenNaked "refresh" Refresh
       , Emitter.listenInt "open-folder" Open
+      , Sub.map FabMenu (Ui.DropdownMenu.subscriptions model.fabMenu)
       ]
 
     folderSubs =
@@ -71,7 +73,7 @@ subscriptions model =
     videoSubs =
       List.map (\item -> Sub.map (Video item.id) (Item.subscriptions item)) model.videos
   in
-    Sub.batch (emitterSubs ++ folderSubs ++ videoSubs)
+    Sub.batch (basicSubs ++ folderSubs ++ videoSubs)
 
 initialize : Model -> Cmd Msg
 initialize model =
@@ -91,6 +93,7 @@ update action model =
   case action of
     Error message ->
       (model, Emitter.sendString "errors" message)
+        :> update FinishLoading
 
     CreateFolder ->
       ( { model | fabMenu = Ui.DropdownMenu.close model.fabMenu }
@@ -109,18 +112,18 @@ update action model =
        :> update (Load model.current)
 
     Loaded contents ->
-      let
-        updatedModel = setData contents model
-        loader = Ui.Loader.finish model.loader
-      in
-      ({ updatedModel | loader = loader }, Cmd.none)
+      (setData contents model, Cmd.none)
+        :> update FinishLoading
+
+    FinishLoading ->
+      ({ model | loader = Ui.Loader.finish model.loader }, Cmd.none)
 
     Load id ->
       let
         restCmd = Types.fetchFolderContents id Error Loaded
         (loader, cmd) = Ui.Loader.start model.loader
       in
-        (model, Cmd.batch [restCmd, Cmd.map Loader cmd])
+        ({ model | loader = loader }, Cmd.batch [restCmd, Cmd.map Loader cmd])
 
     Video id act ->
       let

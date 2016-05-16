@@ -1,6 +1,7 @@
 module Components.Player exposing (..)
 
 import Html.Attributes exposing (controls, src)
+import Html.Events.Extra exposing (onError)
 import Html.Events exposing (onClick)
 import Html exposing (node, text)
 
@@ -51,6 +52,6 @@ view model =
           [ node "strong" [] [text video.name]
           , Ui.icon "close" True [onClick Close]
           ]
-        , node "video" [src video.url, controls True] []
+        , node "video" [src video.url, onError (Error "Could not play the given video!"), controls True] []
         ]
     Nothing -> text ""
