@@ -81,7 +81,7 @@ init =
       ]
 
     model =
-      { app = Ui.App.init "MoneyTrack"
+      { app = Ui.App.init "Money Tracker"
       , dashboard = Dashboard.init
       , settings = Settings.init
       , pager = Ui.Pager.init 0
