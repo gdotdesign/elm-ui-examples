@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "summary": "Elm-UI Project",
-  "repository": "https://github.com/user/project.git",
+  "repository": "https://github.com/gdotdesign/elm-ui.git",
   "license": "BSD3",
   "native-modules": true,
   "source-directories": [
@@ -9,7 +9,10 @@
   ],
   "exposed-modules": [],
   "dependencies": {
-    "sporto/hop": "1.1.1 <= v < 2.0.0"
+    "NoRedInk/elm-decode-pipeline": "1.1.2 <= v < 2.0.0",
+    "ccapndave/elm-update-extra": "1.0.0 <= v < 2.0.0",
+    "elm-lang/keyboard": "1.0.0 <= v < 2.0.0",
+    "evancz/elm-http": "3.0.1 <= v < 4.0.0"
   },
-  "elm-version": "0.16.0 <= v < 0.17.0"
+  "elm-version": "0.17.0 <= v < 0.18.0"
 }

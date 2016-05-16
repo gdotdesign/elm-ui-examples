@@ -1,9 +1,8 @@
-module Rest where
+module Rest exposing (..)
 
 import Json.Decode as Json
 import Json.Encode as J
 
-import Effects
 import Task
 import Http
 
@@ -17,6 +16,7 @@ send method url body =
       , desiredResponseType = Nothing
       , withCredentials = True
       }
+
     request =
       { headers = [("Content-Type", "application/json")]
       , verb = method
@@ -35,6 +35,12 @@ rawRequest method url body decoder =
     Task.andThen
       (Task.mapError promoteError response)
       (\response -> handleResponse decoder response)
+
+promoteError : Http.RawError -> String
+promoteError error =
+  case error of
+    Http.RawTimeout -> "Request timed out!"
+    Http.RawNetworkError -> "Network error!"
 
 handleResponse : Json.Decoder a -> Http.Response -> Task.Task String a
 handleResponse decoder response =
@@ -61,37 +67,39 @@ handleApiResponse decoder response =
         Err msg -> Task.fail "Invalid JSON data!"
     Http.Blob _ -> Task.fail "Wrong response type(Blob)!"
 
-request url method params decoder action =
+request : String
+        -> String
+        -> List ( String, J.Value )
+        -> Json.Decoder a
+        -> (String -> msg)
+        -> (a -> msg)
+        -> Cmd msg
+request url method params decoder error action =
   rawRequest method url (Http.string (encodeParams params)) decoder
-    |> Task.toResult
-    |> Task.map action
-    |> Effects.task
+    |> Task.perform error action
 
-getRequest url params decoder action =
+getRequest : String
+           -> List (String, String)
+           -> Json.Decoder a
+           -> (String -> msg)
+           -> (a -> msg)
+           -> Cmd msg
+getRequest url params decoder error action =
   rawRequest "GET" (Http.url url params) (Http.string "") decoder
-    |> Task.toResult
-    |> Task.map action
-    |> Effects.task
-
-
-promoteError : Http.RawError -> String
-promoteError error =
-  case error of
-    Http.RawTimeout -> "Request timed out!"
-    Http.RawNetworkError -> "Network error!"
+    |> Task.perform error action
 
 encodeParams : List ( String, J.Value ) -> String
 encodeParams params =
   J.encode 0 (J.object params)
 
-get url params decoder action =
-  getRequest url params decoder action
+get url params decoder error action =
+  getRequest url params decoder error action
 
-post url params decoder action =
-  request url "POST" params decoder action
+post url params decoder error action =
+  request url "POST" params decoder error action
 
-patch url params decoder action =
-  request url "PATCH" params decoder action
+patch url params decoder error action =
+  request url "PATCH" params decoder error action
 
-delete url params decoder action =
-  request url "DELETE" params decoder action
+delete url params decoder error action =
+  request url "DELETE" params decoder error action

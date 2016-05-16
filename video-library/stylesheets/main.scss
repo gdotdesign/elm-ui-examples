@@ -7,7 +7,7 @@ video-library-item {
   position: relative;
 
   video-library-item-image {
-    background-color: $secondary;
+    background-color: dampen($background, 10%);
     background-position: center;
     background-size: cover;
     position: relative;
@@ -38,7 +38,7 @@ video-library-item {
     }
 
     &:before {
-      background: dampen($secondary, 20%);
+      background: dampen($background, 25%);
 
       border-radius: $border-radius $border-radius 0 0;
       box-shadow: 0px 1px 3px 0px rgba(0,0,0,0.1);
@@ -51,7 +51,7 @@ video-library-item {
     }
 
     &:after {
-      background: dampen($secondary, 10%);
+      background: dampen($background, 15%);
 
       border-radius: $border-radius $border-radius 0 0;
       box-shadow: 0px 1px 3px 0px rgba(0,0,0,0.1);
@@ -132,9 +132,9 @@ video-library-item {
         800px 2) {
     @media (min-width: #{$breakpoint - 400px} )
        and (max-width: #{$breakpoint - 1px}) {
-      width: calc((100% / #{$num}) - #{($num - 1) * 20px / $num});
+      width: calc((100% / #{$num}) - #{($num - 1) * 25px / $num});
 
-      &:nth-child(#{$num + 1}n) {
+      &:nth-child(#{$num}n) {
         margin-right: 0;
       }
     }
@@ -142,7 +142,7 @@ video-library-item {
 
   @media (max-width: 400px) {
     margin-right: 0;
-    width: 100%;
+    width: 96%;
   }
 }
 
@@ -150,8 +150,11 @@ video-library {
   height: 100vh;
   width: 100vw;
 
+  flex-direction: column;
+  display: flex;
+
   > ui-container {
-    height: 100vh;
+    flex: 1;
   }
 
   ui-breadcrumbs, ui-header {
@@ -226,8 +229,33 @@ ui-fab {
   cursor: pointer;
 }
 
+body {
+  overflow: hidden;
+}
+
+ui-breadcrumbs {
+  flex: 0 0 auto;
+}
+
+* {
+  min-height: 0;
+}
+
+video-library-folder-wrapper {
+  flex-direction: column;
+  position: relative;
+  display: block;
+  display: flex;
+  flex: 1;
+
+  ui-scrolled-panel {
+    padding: 15px;
+    margin: 10px;
+    margin-right: 0;
+  }
+}
+
 video-library-folder {
-  padding: 30px;
   position: relative;
   display: flex;
   align-items: flex-start;

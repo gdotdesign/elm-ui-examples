@@ -1,10 +1,10 @@
-module Forms.Video where
+module Forms.Video exposing (..)
 
-import Ext.Signal2 exposing ((>>>))
 import Html exposing (node, text)
+import Html.App
+
 import Json.Encode as J
 import Maybe.Extra
-import Effects
 import String
 
 import Ui.Container
@@ -20,10 +20,10 @@ type alias Model =
   , id : Maybe Int
   }
 
-type Action
-  = Image Ui.Input.Action
-  | Name Ui.Input.Action
-  | Url Ui.Input.Action
+type Msg
+  = Image Ui.Input.Msg
+  | Name Ui.Input.Msg
+  | Url Ui.Input.Msg
 
 init : Model
 init =
@@ -58,31 +58,31 @@ isValid model =
   (not (String.isEmpty (String.trim model.name.value))) &&
   (not (String.isEmpty (String.trim model.url.value)))
 
-view: Signal.Address Action -> Model -> Html.Html
-view address model =
+view: Model -> Html.Html Msg
+view model =
   node "video-libaray-video-form" []
     [ Ui.Container.column []
-      [ Ui.inputGroup "Image" (Ui.Input.view (address >>> Image) model.image)
-      , Ui.inputGroup "Name" (Ui.Input.view (address >>> Name) model.name)
-      , Ui.inputGroup "Url" (Ui.Input.view (address >>> Url) model.url)
+      [ Ui.inputGroup "Image" (Html.App.map Image (Ui.Input.view model.image))
+      , Ui.inputGroup "Name" (Html.App.map Name (Ui.Input.view model.name))
+      , Ui.inputGroup "Url" (Html.App.map Url (Ui.Input.view model.url))
       ]
     ]
 
-update: Action -> Model -> (Model, Effects.Effects Action)
-update action model =
-  case action of
+update: Msg -> Model -> (Model, Cmd Msg)
+update msg model =
+  case msg of
     Image act ->
       let
-        (image, effect) = Ui.Input.update act model.image
+        (image, cmd) = Ui.Input.update act model.image
       in
-        ({ model | image = image }, Effects.map Image effect)
+        ({ model | image = image }, Cmd.map Image cmd)
     Name act ->
       let
-        (name, effect) = Ui.Input.update act model.name
+        (name, cmd) = Ui.Input.update act model.name
       in
-        ({ model | name = name }, Effects.map Name effect)
+        ({ model | name = name }, Cmd.map Name cmd)
     Url act ->
       let
-        (url, effect) = Ui.Input.update act model.url
+        (url, cmd) = Ui.Input.update act model.url
       in
-        ({ model | url = url }, Effects.map Url effect)
+        ({ model | url = url }, Cmd.map Url cmd)
