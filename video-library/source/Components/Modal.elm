@@ -1,5 +1,6 @@
 module Components.Modal exposing (..)
 
+import Update.Extra.Infix exposing ((:>))
 import Json.Encode as J
 import Html.App
 import Html
@@ -15,6 +16,7 @@ type alias Model model entity msg =
   , form : model
   , entity : Maybe entity
   , parentId : Int
+  , loading : Bool
   }
 
 type alias Functions model entity msg =
@@ -40,6 +42,8 @@ type Action entity msg
   | Load Int
   | Loaded entity
   | Saved entity
+  | FinishLoading
+  | StartLoading
   | Error String
   | Create Int
 
@@ -50,6 +54,7 @@ init functions =
   , form = functions.init
   , entity = Nothing
   , parentId = 0
+  , loading = False
   }
 
 subscriptions : String -> Sub (Action entity msg)
@@ -100,21 +105,32 @@ update action model =
           |> Maybe.withDefault (model.functions.create createParams Error Saved)
       in
         (model, cmd)
+        :> update StartLoading
 
     Create parentId ->
       (open parentId model, Cmd.none)
 
     Load id ->
       (model, model.functions.get id Error Loaded)
+      :> update StartLoading
 
     Loaded entity ->
       (openWithEntity entity model, Cmd.none)
+      :> update FinishLoading
+
+    StartLoading ->
+      ({ model | loading = True }, Cmd.none)
+
+    FinishLoading ->
+      ({ model | loading = False }, Cmd.none)
 
     Saved entity ->
       (close model, Emitter.sendNaked "refresh")
+      :> update FinishLoading
 
     Error message ->
       (model, Emitter.sendString "errors" message)
+      :> update FinishLoading
 
     Modal act ->
       ({ model | modal = Ui.Modal.update act model.modal }, Cmd.none)
@@ -145,7 +161,7 @@ view model =
             Save
             { kind = "primary"
             , size = "medium"
-            , disabled = not (model.functions.isValid model.form)
+            , disabled = (not (model.functions.isValid model.form) || model.loading)
             , text = button
             }
           ]

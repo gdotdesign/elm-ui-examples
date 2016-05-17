@@ -4,7 +4,6 @@ import Html exposing (node, text)
 import Html.App
 
 import Json.Encode as J
-import Maybe.Extra
 import String
 
 import Ui.Container
@@ -45,7 +44,7 @@ asParams model =
 
 isNew : Model -> Bool
 isNew model =
-  Maybe.Extra.isNothing model.id
+  model.id == Nothing
 
 isValid : Model -> Bool
 isValid model =

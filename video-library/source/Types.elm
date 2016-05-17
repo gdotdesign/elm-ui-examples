@@ -4,7 +4,6 @@ import Json.Decode.Pipeline exposing (decode, required)
 import Json.Decode as Json
 import Json.Encode as J
 
-import Maybe.Extra exposing (isJust)
 import Task
 import Http
 
