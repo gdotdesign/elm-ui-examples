@@ -162,6 +162,7 @@ view model =
             { kind = "primary"
             , size = "medium"
             , disabled = (not (model.functions.isValid model.form) || model.loading)
+            , readonly = False
             , text = button
             }
           ]

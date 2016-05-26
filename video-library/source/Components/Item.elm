@@ -43,7 +43,7 @@ update: Msg -> Model -> (Model, Cmd Msg)
 update action model =
   case action of
     Open ->
-      (closeMenu model, Emitter.sendInt ("open-" ++ model.kind) model.id)
+      (closeMenu model, Emitter.sendInt ("navigate-" ++ model.kind) model.id)
 
     Edit ->
       (closeMenu model, Emitter.sendInt ("edit-" ++ model.kind) model.id)

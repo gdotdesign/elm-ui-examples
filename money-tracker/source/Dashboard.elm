@@ -6,8 +6,8 @@ module Dashboard exposing (..)
   - The breakdown of the spending is shown by category
 -}
 
-import Number.Format exposing (prettyInt)
 import List.Extra
+import Numeral
 
 import Date.Extra.Config.Configs as DateConfigs
 import Date.Extra.Format exposing (format)
@@ -89,7 +89,7 @@ view address viewModel model =
     {- Spending in the selected month. -}
     spending =
       (viewModel.settings.prefix ++ " ")
-        ++ (prettyInt ',' (sumSpending transactions))
+        ++ (Numeral.format "0,0" (toFloat (sumSpending transactions)))
         ++ (" " ++ viewModel.settings.affix)
 
     {- Category list. -}
@@ -162,7 +162,7 @@ renderCategory transactions category =
     row =
       tr []
         [ td [] [ text category.name ]
-        , td [] [ text (prettyInt ',' sum) ]
+        , td [] [ text (Numeral.format "0,0" (toFloat sum)) ]
         ]
   in
     div
@@ -182,7 +182,7 @@ renderTransaction transaction =
       format (DateConfigs.getConfig "en_us") "%Y-%m-%d" transaction.date
 
     amount =
-      prettyInt ',' transaction.amount
+      Numeral.format "0,0" (toFloat transaction.amount)
   in
     tr
       []

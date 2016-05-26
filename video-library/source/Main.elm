@@ -1,5 +1,9 @@
 module Main exposing (..)
 
+import Navigation
+import String
+import UrlParser exposing (Parser, (</>))
+
 import Html exposing (node, text)
 import Html.App
 
@@ -37,14 +41,33 @@ type Msg
   = NoOp
   | Notifications Ui.NotificationCenter.Msg
   | App Ui.App.Msg
-  | Folder Folder.Msg
+  | Folders Folder.Msg
   | FolderModal (Modal.Action Folder FolderForm.Msg)
   | VideoModal (Modal.Action Video VideoForm.Msg)
   | Player Player.Msg
   | Notify String
+  | NavigateFolder Int
+  | NavigateVideo Int
 
-init : Model
-init =
+type Routes
+  = Folder Int
+  | FolderAndVideo Int Int
+  | NotFound String
+
+routes : Parser (Routes -> msg) msg
+routes =
+  UrlParser.oneOf
+    [ UrlParser.format FolderAndVideo (UrlParser.int </> UrlParser.int)
+    , UrlParser.format Folder (UrlParser.int)
+    , UrlParser.format NotFound (UrlParser.string)
+    ]
+
+routeParser : Navigation.Location -> Result String Routes
+routeParser location =
+  UrlParser.parse identity routes (String.dropLeft 1 location.pathname)
+
+init : Result String Routes -> (Model, Cmd Msg)
+init data =
   { notifications = Ui.NotificationCenter.init 4000 320
   , folder = Folder.init
   , app = Ui.App.init "Video Library"
@@ -78,6 +101,7 @@ init =
                             , create = Types.createVideo
                             }
   }
+  |> urlUpdate data
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -89,11 +113,11 @@ update msg model =
       in
         ({ model | notifications = notifications }, Cmd.map Notifications effect)
 
-    Folder act ->
+    Folders act ->
       let
         (folder, cmd) = Folder.update act model.folder
       in
-        ({ model | folder = folder }, Cmd.map Folder cmd)
+        ({ model | folder = folder }, Cmd.map Folders cmd)
 
     Player act ->
       let
@@ -125,7 +149,43 @@ update msg model =
       in
         ({ model | app = app }, Cmd.map App cmd)
 
+    NavigateFolder id ->
+      let
+        baseUrl = "/" ++ (toString id)
+        url =
+          case model.player.video of
+            Just video -> baseUrl ++ "/" ++ (toString video.id)
+            _ -> baseUrl
+      in
+        (model, Navigation.newUrl url)
+
+    NavigateVideo id ->
+      let
+        baseUrl =
+          "/" ++ (toString model.folder.current) ++ "/" ++ (toString id)
+      in
+        (model, Navigation.newUrl baseUrl)
+
     _ -> (model, Cmd.none)
+
+urlUpdate : Result String Routes -> Model -> (Model, Cmd Msg)
+urlUpdate data model =
+  let
+    _ = log "a" data
+  in
+    case data of
+      Ok route ->
+        case route of
+          Folder folderId ->
+            (model, Emitter.sendInt "open-folder" folderId)
+          FolderAndVideo folderId videoId ->
+            (model, Cmd.batch [ Emitter.sendInt "open-folder" folderId
+                              , Emitter.sendInt "open-video" videoId
+                              ])
+          NotFound _ ->
+            (model, Emitter.sendInt "open-folder" 0)
+      Err message ->
+        (model, Emitter.sendInt "open-folder" 0)
 
 view: Model -> Html.Html Msg
 view model =
@@ -138,7 +198,7 @@ view model =
       [ Ui.Header.view []
         [ Ui.Header.title [] [text "Video Library"]
         ]
-      , Html.App.map Folder (Folder.view model.folder)
+      , Html.App.map Folders (Folder.view model.folder)
       ]
     ]
 
@@ -146,13 +206,16 @@ main =
   let
     model = init
   in
-    Html.App.program
-      { init = (model, Cmd.map Folder (Folder.initialize model.folder))
+    Navigation.program (Navigation.makeParser routeParser)
+      { init = init
       , view = view
       , update = update
-      , subscriptions = \model -> Sub.batch [ Sub.map Folder (Folder.subscriptions model.folder)
+      , urlUpdate = urlUpdate
+      , subscriptions = \model -> Sub.batch [ Sub.map Folders (Folder.subscriptions model.folder)
                                             , Sub.map Player Player.subscriptions
                                             , Sub.map VideoModal (Modal.subscriptions "video")
                                             , Sub.map FolderModal (Modal.subscriptions "folder")
+                                            , Emitter.listenInt "navigate-folder" NavigateFolder
+                                            , Emitter.listenInt "navigate-video" NavigateVideo
                                             , Emitter.listenString "errors" Notify ]
       }

@@ -37,6 +37,7 @@ type Msg
   | CreateVideo
   | CreateFolder
   | Open Int
+  | NavigateFolder Int
   | Refresh
   | Load Int
 
@@ -49,7 +50,7 @@ init =
     , videos = []
     , breadcrumbs = []
     , loader = Ui.Loader.init 100
-    , current = 0
+    , current = -1
     , currentName = ""
     , fabMenu = { fabMenu | offsetTop = 10
                           , favoredSides = { horizontal = "left"
@@ -103,9 +104,15 @@ update action model =
       ( { model | fabMenu = Ui.DropdownMenu.close model.fabMenu }
       , Emitter.sendInt "create-video" model.current)
 
+    NavigateFolder id ->
+      (model, Emitter.sendInt "navigate-folder" id)
+
     Open id ->
-      (model, Cmd.none)
-       :> update (Load id)
+      if id /= model.current then
+        (model, Cmd.none)
+         :> update (Load id)
+      else
+        (model, Cmd.none)
 
     Refresh ->
       (model, Cmd.none)
@@ -195,7 +202,7 @@ view model =
     breadcrumbItems =
       let
         root =
-          [("Library", Just (Open 0))]
+          [("Library", Just (NavigateFolder 0))]
 
         base =
           if model.current /= 0 then
@@ -205,13 +212,13 @@ view model =
 
         current =
           if model.current /= 0 then
-            [(model.currentName, Just (Open model.current))]
+            [(model.currentName, Just (NavigateFolder model.current))]
           else
             root
 
         parts =
           List.filter (\folder -> folder.id /= 0) model.breadcrumbs
-          |> List.map (\folder-> (folder.name, Just (Open folder.id)))
+          |> List.map (\folder-> (folder.name, Just (NavigateFolder folder.id)))
           |> List.reverse
       in
         base ++ parts ++ current
