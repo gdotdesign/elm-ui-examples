@@ -83,7 +83,7 @@ view address viewModel model =
     backIcon =
       Ui.Header.icon "android-arrow-back" False [ onClick viewModel.backMsg ]
   in
-    Ui.Container.render
+    Ui.Container.view
       { align = "stretch"
       , direction = "column"
       , compact = True

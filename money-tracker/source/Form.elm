@@ -230,7 +230,7 @@ view address viewModel model =
         (address << CategoryChooser)
         (Ui.Chooser.view model.categoryChooser)
   in
-    Ui.Container.render
+    Ui.Container.view
       { align = "stretch"
       , direction = "column"
       , compact = True
