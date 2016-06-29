@@ -1,10 +1,9 @@
-module Forms.Folder where
+module Forms.Folder exposing (..)
 
-import Ext.Signal2 exposing ((>>>))
 import Html exposing (node, text)
+import Html.App
+
 import Json.Encode as J
-import Maybe.Extra
-import Effects
 import String
 
 import Ui.Container
@@ -19,21 +18,21 @@ type alias Model =
   , id : Maybe Int
   }
 
-type Action
-  = Image Ui.Input.Action
-  | Name Ui.Input.Action
+type Msg
+  = Image Ui.Input.Msg
+  | Name Ui.Input.Msg
 
 init : Model
 init =
-  { image = Ui.Input.init ""
-  , name = Ui.Input.init ""
+  { image = Ui.Input.init "" "Image URL..."
+  , name = Ui.Input.init "" "Name..."
   , id = Nothing
   }
 
 fromFolder : Folder -> Model
 fromFolder {image, name, id} =
-  { image = Ui.Input.init image
-  , name = Ui.Input.init name
+  { image = Ui.Input.init image "Image URL..."
+  , name = Ui.Input.init name "Name..."
   , id = Just id
   }
 
@@ -45,32 +44,32 @@ asParams model =
 
 isNew : Model -> Bool
 isNew model =
-  Maybe.Extra.isNothing model.id
+  model.id == Nothing
 
 isValid : Model -> Bool
 isValid model =
   not (String.isEmpty (String.trim model.image.value)) &&
   not (String.isEmpty (String.trim model.name.value))
 
-view: Signal.Address Action -> Model -> Html.Html
-view address model =
+view: Model -> Html.Html Msg
+view model =
   node "video-library-folder-form" []
     [ Ui.Container.column []
-      [ Ui.inputGroup "Image" (Ui.Input.view (address >>> Image) model.image)
-      , Ui.inputGroup "Name" (Ui.Input.view (address >>> Name) model.name)
+      [ Ui.inputGroup "Image" (Html.App.map Image (Ui.Input.view model.image))
+      , Ui.inputGroup "Name" (Html.App.map Name (Ui.Input.view model.name))
       ]
     ]
 
-update: Action -> Model -> (Model, Effects.Effects Action)
+update: Msg -> Model -> (Model, Cmd Msg)
 update action model =
   case action of
     Image act ->
       let
-        (image, effect) = Ui.Input.update act model.image
+        (image, cmd) = Ui.Input.update act model.image
       in
-        ({ model | image = image }, Effects.map Image effect)
+        ({ model | image = image }, Cmd.map Image cmd)
     Name act ->
       let
-        (name, effect) = Ui.Input.update act model.name
+        (name, cmd) = Ui.Input.update act model.name
       in
-        ({ model | name = name }, Effects.map Name effect)
+        ({ model | name = name }, Cmd.map Name cmd)

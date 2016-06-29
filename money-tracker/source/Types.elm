@@ -1,12 +1,26 @@
-module Types where
+module Types exposing (..)
 
-import Json.Encode as J
-import Json.Decode.Extra as JsonExtra
+{-| Types that are used along the application.
+-}
 import Json.Decode as Json exposing ((:=))
-import Date.Format exposing (format)
+import Json.Decode.Extra as JsonExtra
+import Json.Encode as J
+
+import Date.Extra.Config.Configs as DateConfigs
+import Date.Extra.Format exposing (format)
 import Date
 
-{- Represents a transaction. -}
+
+{-| Encodes a date object.
+-}
+encodeDate : Date.Date -> Json.Value
+encodeDate date =
+  format (DateConfigs.getConfig "en_us") "%Y-%m-%d" date
+    |> J.string
+
+
+{-| Representation of a transaction.
+-}
 type alias Transaction =
   { id : String
   , amount : Int
@@ -16,112 +30,164 @@ type alias Transaction =
   , date : Date.Date
   }
 
-transactionDecoder =
-  Json.object6 Transaction
+
+{-| Decodes a transaction.
+-}
+decodeTransaction : Json.Decoder Transaction
+decodeTransaction =
+  Json.object6
+    Transaction
     ("id" := Json.string)
     ("amount" := Json.int)
     ("comment" := Json.string)
     ("categoryId" := Json.string)
     ("accountId" := Json.string)
-    ("date" := JsonExtra.date )
+    ("date" := JsonExtra.date)
 
-transactionEncoder transaction =
+
+{-| Encodes a transaction record.
+-}
+encodeTransaction : Transaction -> Json.Value
+encodeTransaction transaction =
   J.object
-    [ ("id", J.string transaction.id)
-    , ("amount", J.int transaction.amount)
-    , ("comment", J.string transaction.comment)
-    , ("categoryId", J.string transaction.categoryId)
-    , ("accountId", J.string transaction.accountId)
-    , ("date", J.string (format "%Y-%m-%d" transaction.date))
+    [ ( "id", J.string transaction.id )
+    , ( "amount", J.int transaction.amount )
+    , ( "comment", J.string transaction.comment )
+    , ( "categoryId", J.string transaction.categoryId )
+    , ( "accountId", J.string transaction.accountId )
+    , ( "date", encodeDate transaction.date )
     ]
 
-{- Represents a category. -}
+
+{-| Representation of a category.
+-}
 type alias Category =
-  { id : String
-  , icon : String
+  { icon : String
   , name : String
+  , id : String
   }
 
-unkownCategory =
-  { id = ""
-  , icon = ""
-  , name = "Unkown"
-  }
 
-categoryDecoder =
-  Json.object3 Category
-    ("id" := Json.string)
+{-| Decodes a category.
+-}
+decodeCategory : Json.Decoder Category
+decodeCategory =
+  Json.object3
+    Category
     ("icon" := Json.string)
     ("name" := Json.string)
+    ("id" := Json.string)
 
-categoryEncoder category =
+
+{-| Encodes a category record.
+-}
+encodeCategory : Category -> Json.Value
+encodeCategory category =
   J.object
-    [ ("id", J.string category.id)
-    , ("icon", J.string category.icon)
-    , ("name", J.string category.name)
+    [ ( "icon", J.string category.icon )
+    , ( "name", J.string category.name )
+    , ( "id", J.string category.id )
     ]
 
-{- Represents an account. -}
+
+{-| Representation of an account.
+-}
 type alias Account =
-  { id : String
-  , initialBalance: Int
+  { initialBalance : Int
   , name : String
   , icon : String
+  , id : String
   }
 
-accountDecoder =
-  Json.object4 Account
-    ("id" := Json.string)
+
+{-| Decodes an account.
+-}
+decodeAccount : Json.Decoder Account
+decodeAccount =
+  Json.object4
+    Account
     ("initialBalance" := Json.int)
     ("name" := Json.string)
     ("icon" := Json.string)
+    ("id" := Json.string)
 
-accountEncoder account =
+
+{-| Encodes an account record.
+-}
+encodeAccount : Account -> Json.Value
+encodeAccount account =
   J.object
-    [ ("id", J.string account.id)
-    , ("initialBalance", J.int account.initialBalance)
-    , ("name", J.string account.name)
-    , ("icon", J.string account.icon)
+    [ ( "initialBalance", J.int account.initialBalance )
+    , ( "name", J.string account.name )
+    , ( "icon", J.string account.icon )
+    , ( "id", J.string account.id )
     ]
 
-{- Represents a user sessions data. -}
+
+{-| Representation of a users session data.
+-}
 type alias Store =
-  { accounts : List Account
+  { transactions : List Transaction
   , categories : List Category
-  , transactions : List Transaction
+  , accounts : List Account
   , settings : Settings
   }
 
+
+{-| Representation of a settings object.
+-}
 type alias Settings =
   { prefix : String
   , affix : String
   }
 
-settingsDecoder =
-  Json.object2 Settings
-    ("prefix" := Json.string )
-    ("affix" := Json.string )
 
-settingsEncoder settings =
+{-| Decodes a settings.
+-}
+decodeSettings : Json.Decoder Settings
+decodeSettings =
+  Json.object2
+    Settings
+    ("prefix" := Json.string)
+    ("affix" := Json.string)
+
+
+{-| Encodes a settings record.
+-}
+encodeSettings : Settings -> Json.Value
+encodeSettings settings =
   J.object
-    [ ("prefix", J.string settings.prefix)
-    , ("affix", J.string settings.affix)
+    [ ( "prefix", J.string settings.prefix )
+    , ( "affix", J.string settings.affix )
     ]
 
-storeDecoder =
-  Json.object4 Store
-    ("accounts" := Json.list accountDecoder)
-    ("categories" := Json.list categoryDecoder)
-    ("transactions" := Json.list transactionDecoder)
-    ("settings" := settingsDecoder)
 
-storeEncoder store =
+{-| Decodes a store.
+-}
+decodeStore : Json.Decoder Store
+decodeStore =
+  Json.object4
+    Store
+    ("transactions" := Json.list decodeTransaction)
+    ("categories" := Json.list decodeCategory)
+    ("accounts" := Json.list decodeAccount)
+    ("settings" := decodeSettings)
+
+
+{-| Encodes a store-
+-}
+encodeStore : Store -> Json.Value
+encodeStore store =
   J.object
-    [ ("accounts", J.list (List.map accountEncoder store.accounts) )
-    , ("categories", J.list (List.map categoryEncoder store.categories) )
-    , ("transactions", J.list (List.map transactionEncoder store.transactions) )
-    , ("settings", settingsEncoder store.settings)
+    [ ( "transactions", J.list (List.map encodeTransaction store.transactions) )
+    , ( "categories", J.list (List.map encodeCategory store.categories) )
+    , ( "accounts", J.list (List.map encodeAccount store.accounts) )
+    , ( "settings", encodeSettings store.settings )
     ]
 
+
+{-| Updates a stores settings.
+-}
+updateStoreSettings : Settings -> Store -> Store
 updateStoreSettings settings store =
   { store | settings = settings }

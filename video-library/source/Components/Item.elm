@@ -1,20 +1,20 @@
-module Components.Item where
-
-import Ext.Signal2 exposing ((>>>))
+module Components.Item exposing (..)
 
 import Html.Attributes exposing (classList, style)
+import Html.Events exposing (onClick)
 import Html exposing (node, text)
-import Json.Encode
-import VirtualDom
 
-import Ui.DropdownMenu as DropdownMenu
+import Json.Decode as Json
+
+import Ui.Helpers.Emitter as Emitter
+import Ui.DropdownMenu
 import Ui.Container
 import Ui
 
-import Types exposing (..)
+import Types
 
 type alias Model =
-  { menu : DropdownMenu.Model
+  { menu : Ui.DropdownMenu.Model
   , image : String
   , name : String
   , kind : String
@@ -27,26 +27,51 @@ type alias Entity a =
       , image : String
   }
 
-type alias ViewModel =
-  { onDelete : Html.Attribute
-  , onClick : Html.Attribute
-  , onEdit : Html.Attribute
-  }
+type Msg
+  = Menu Ui.DropdownMenu.Msg
+  | Open
+  | Delete
+  | Edit
+  | Deleted Json.Value
+  | Error String
 
-type Action
-  = Menu DropdownMenu.Action
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Sub.map Menu (Ui.DropdownMenu.subscriptions model.menu)
 
-update: Action -> Model -> Model
+update: Msg -> Model -> (Model, Cmd Msg)
 update action model =
   case action of
+    Open ->
+      (closeMenu model, Emitter.sendInt ("navigate-" ++ model.kind) model.id)
+
+    Edit ->
+      (closeMenu model, Emitter.sendInt ("edit-" ++ model.kind) model.id)
+
+    Deleted _ ->
+      (closeMenu model, Emitter.sendNaked "refresh")
+
+    Error message ->
+      (model, Emitter.sendString "errors" message)
+
+    Delete ->
+      let
+        cmd =
+          if model.kind == "video" then
+            Types.deleteVideo model.id Error Deleted
+          else
+            Types.deleteFolder model.id Error Deleted
+      in
+        (model, cmd)
+
     Menu act ->
-      { model | menu = DropdownMenu.update act model.menu }
+      ({ model | menu = Ui.DropdownMenu.update act model.menu }, Cmd.none)
 
 init : String -> Entity a -> Model
 init kind {id, name, image} =
   let
     menu =
-      DropdownMenu.init
+      Ui.DropdownMenu.init
 
     favoredSides =
       { horizontal = "right"
@@ -61,41 +86,37 @@ init kind {id, name, image} =
     }
 
 -- TODO: Move this to Elm-UI DropdownMenu
-menuItem : String -> String -> Html.Attribute -> Html.Html
+menuItem : String -> String -> msg -> Html.Html msg
 menuItem icon title action =
-  DropdownMenu.item [action]
+  Ui.DropdownMenu.item [onClick action]
     [ Ui.icon icon False []
     , node "span" [] [text title ]
     ]
 
-handleClick : Bool -> Model -> Model
-handleClick pressed model =
-  { model | menu = DropdownMenu.handleClick pressed model.menu }
-
 closeMenu : Model -> Model
 closeMenu model =
-  { model | menu = DropdownMenu.close model.menu }
+  { model | menu = Ui.DropdownMenu.close model.menu }
 
-view : Signal.Address Action -> ViewModel -> Model -> Html.Html
-view address viewModel model =
+view : Model -> Html.Html Msg
+view model =
   node "video-library-item"
-    [ VirtualDom.property "key" (Json.Encode.string (model.kind ++ "-" ++ (toString model.id)))
-    , classList [(model.kind, True)]
+    [ classList [(model.kind, True)]
     ]
     [ node "video-library-item-image"
-      [ viewModel.onClick
+      [ onClick Open
       , style [("background-image", "url(" ++ model.image ++ ")") ]
       ]
       [ ]
     , Ui.Container.row []
-        [ node "div" [viewModel.onClick] [text model.name]
-        , DropdownMenu.view
-          (address >>> Menu)
-          (Ui.icon "android-more-horizontal" True [])
-          [ menuItem "android-open" "Open" viewModel.onClick
-          , menuItem "edit" "Edit" viewModel.onEdit
-          , menuItem "trash-b" "Delete" viewModel.onDelete
-          ]
+        [ node "div" [onClick Open] [text model.name]
+        , Ui.DropdownMenu.view
+          { element = (Ui.icon "android-more-horizontal" True [])
+          , items = [ menuItem "android-open" "Open" Open
+                    , menuItem "edit" "Edit" Edit
+                    , menuItem "trash-b" "Delete" Delete
+                    ]
+          }
+          Menu
           model.menu
         ]
     ]

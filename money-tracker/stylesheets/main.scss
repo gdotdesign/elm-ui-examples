@@ -1,6 +1,84 @@
+$primary: orangered;
+
 @import 'ui';
 
-.money-track-form {
-  max-width: 400px;
-  max-height: 600px;
+.mt-dashboard-month {
+  text-align: center;
+  flex: 1;
 }
+
+.mt-dashboard-panel {
+  overflow: auto;
+  flex: 1;
+}
+
+.mt-dashboard-spending {
+  text-align: center;
+  font-weight: 600;
+  font-size: 40px;
+  padding: 30px 0;
+}
+
+.mt-dashboard-category {
+  margin-bottom: 10px;
+  background: $input;
+
+  table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  tr:first-child {
+    font-weight: 600;
+  }
+
+  td {
+    border: $border;
+    padding: 7px;
+
+    &:last-child {
+      width: 100px;
+      text-align: center;
+    }
+  }
+}
+
+.money-track-form {
+  display: flex;
+  flex: 1;
+
+  ui-input-group {
+  	flex: 0 0 auto;
+  }
+
+  ui-number-pad {
+  	min-height: 0;
+  	flex: 1;
+  }
+
+  ui-container {
+  	flex: 1;
+  }
+}
+
+ui-app {
+
+  @media (min-width: 500px) {
+    border: 10px solid #333;
+    box-sizing: content-box;
+    margin-left: -250px;
+    margin-top: -350px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+  }
+}
+
+.money-track,
+ui-app,
+ui-pager {
+  max-width: 500px;
+  max-height: 700px;
+}
+

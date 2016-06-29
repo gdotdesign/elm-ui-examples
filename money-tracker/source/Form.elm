@@ -1,30 +1,42 @@
-module Form where
+module Form exposing (..)
 
-{- Form for editing / creating transactions. -}
-import Signal exposing (forwardTo)
+{-| Form for editing / creating transactions.
+-}
+
 import List.Extra
 import Ext.Date
-import Effects
 import Date
 
-
 import Html.Attributes exposing (classList)
+import Html.Events exposing (onClick)
 import Html exposing (text)
+import Html.App
 
 import Ui.NumberPad
 import Ui.Chooser
+import Ui.Header
 import Ui.DatePicker
 import Ui.Container
 import Ui
 
 import Types as Types exposing (..)
 
-type Action
-  = NumberPad Ui.NumberPad.Action
-  | AccountChooser Ui.Chooser.Action
-  | CategoryChooser Ui.Chooser.Action
-  | DatePicker Ui.DatePicker.Action
 
+{-| Messages that a form can receive.
+-}
+type Msg
+  = CategoryChooser Ui.Chooser.Msg
+  | AccountChooser Ui.Chooser.Msg
+  | DatePicker Ui.DatePicker.Msg
+  | NumberPad Ui.NumberPad.Msg
+
+
+{-| Representation of a form:
+  - **categoryChooser** - the chooser for the category
+  - **accountChooser** - the chooser for the account
+  - **datePicker** - the date picker
+  - **numberPad** - the number pad
+-}
 type alias Model =
   { categoryChooser : Ui.Chooser.Model
   , accountChooser : Ui.Chooser.Model
@@ -32,12 +44,21 @@ type alias Model =
   , numberPad : Ui.NumberPad.Model
   }
 
-type alias ViewModel =
-  { bottomRight : Html.Html
-  , bottomLeft : Html.Html
-  , backHandler : Html.Attribute
+
+{-| Representation of a view model for a form:
+  - **bottomRight** - content for the bottom right panel in the number pad
+  - **bottomLeft** - content for the bottom left panel in the number pad
+  - **backMsg** - the message that will navigate back
+-}
+type alias ViewModel msg =
+  { bottomRight : Html.Html msg
+  , bottomLeft : Html.Html msg
+  , backMsg : msg
   }
 
+
+{-| Data model.
+-}
 type alias Data =
   { categoryId : String
   , accountId : String
@@ -46,11 +67,21 @@ type alias Data =
   , amount : Int
   }
 
-init : Signal.Address Action -> Model
-init address =
+
+{-| Subscriptions for a form.
+-}
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Sub.map DatePicker (Ui.DatePicker.subscriptions model.datePicker)
+
+
+{-| Initializes a form.
+-}
+init : Model
+init =
   let
     datePicker =
-      Ui.DatePicker.init (forwardTo address DatePicker) (Ext.Date.now ())
+      Ui.DatePicker.init (Ext.Date.now ())
 
     accountChooser =
       Ui.Chooser.init [] "Account..." ""
@@ -64,12 +95,20 @@ init address =
     , numberPad = Ui.NumberPad.init 0
     }
 
+
+{-| Populates the form with the given value.
+-}
 populate : Store -> Int -> Date.Date -> Model -> Model
 populate store amount date model =
   let
-    mapItem item = { value = item.id, label = item.name }
-    categories = List.map mapItem store.categories
-    accounts = List.map mapItem store.accounts
+    mapItem item =
+      { value = item.id, label = item.name }
+
+    categories =
+      List.map mapItem store.categories
+
+    accounts =
+      List.map mapItem store.accounts
 
     updatedChooser data chooser =
       Ui.Chooser.updateData data chooser
@@ -77,27 +116,37 @@ populate store amount date model =
 
     selectFirst chooser =
       case Ui.Chooser.getFirstSelected chooser of
-        Just value -> chooser
+        Just value ->
+          chooser
+
         _ ->
           fst (Ui.Chooser.selectFirst chooser)
 
-    (numberPad, effect) = Ui.NumberPad.setValue amount model.numberPad
+    numberPad =
+      Ui.NumberPad.setValue amount model.numberPad
   in
-    { model | categoryChooser = updatedChooser categories model.categoryChooser
-            , accountChooser  = updatedChooser accounts model.accountChooser
-            , datePicker = Ui.DatePicker.setValue date model.datePicker
-            , numberPad = numberPad
-            }
+    { model
+      | categoryChooser = updatedChooser categories model.categoryChooser
+      , accountChooser = updatedChooser accounts model.accountChooser
+      , datePicker = Ui.DatePicker.setValue date model.datePicker
+      , numberPad = numberPad
+    }
 
+
+{-| Builds the data object.
+-}
 buildData : Account -> Category -> Int -> Model -> Data
 buildData account category amount model =
-  { categoryId = category.id
-  , accountId  = account.id
-  , date       = model.datePicker.calendar.value
-  , amount     = amount
-  , comment    = ""
+  { date = model.datePicker.calendar.value
+  , categoryId = category.id
+  , accountId = account.id
+  , amount = amount
+  , comment = ""
   }
 
+
+{-| Returns the current data from a form.
+-}
 data : Store -> Model -> Maybe Data
 data store model =
   let
@@ -118,64 +167,100 @@ data store model =
   in
     Maybe.map4 buildData account' category' amount' (Just model)
 
-update : Action -> Model -> (Model, Effects.Effects Action)
-update action model =
-  case action of
+
+{-| Updates a form.
+-}
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+  case msg of
     NumberPad act ->
       let
-        (numberPad, effect) = Ui.NumberPad.update act model.numberPad
+        ( numberPad, effect ) =
+          Ui.NumberPad.update act model.numberPad
       in
-        ({ model | numberPad = numberPad }, Effects.map NumberPad effect)
+        ( { model | numberPad = numberPad }
+        , Cmd.map NumberPad effect
+        )
+
     AccountChooser act ->
       let
-        (accountChooser, effect) = Ui.Chooser.update act model.accountChooser
+        ( accountChooser, effect ) =
+          Ui.Chooser.update act model.accountChooser
       in
-        ({ model | accountChooser = accountChooser }, Effects.map AccountChooser effect)
+        ( { model | accountChooser = accountChooser }
+        , Cmd.map AccountChooser effect
+        )
+
     CategoryChooser act ->
       let
-        (categoryChooser, effect) = Ui.Chooser.update act model.categoryChooser
+        ( categoryChooser, effect ) =
+          Ui.Chooser.update act model.categoryChooser
       in
-        ({ model | categoryChooser = categoryChooser }, Effects.map CategoryChooser effect)
+        ( { model | categoryChooser = categoryChooser }
+        , Cmd.map CategoryChooser effect
+        )
+
     DatePicker act ->
       let
-        (datePicker, effect) = Ui.DatePicker.update act model.datePicker
+        ( datePicker, effect ) =
+          Ui.DatePicker.update act model.datePicker
       in
-        ({ model | datePicker = datePicker }, Effects.map DatePicker effect)
+        ( { model | datePicker = datePicker }
+        , Cmd.map DatePicker effect
+        )
 
-view : Signal.Address Action -> ViewModel -> Model -> Html.Html
+
+{-| Renders a form.
+-}
+view : (Msg -> msg) -> ViewModel msg -> Model -> Html.Html msg
 view address viewModel model =
   let
     datePicker =
-      Ui.DatePicker.view (forwardTo address DatePicker) model.datePicker
+      Html.App.map
+        (address << DatePicker)
+        (Ui.DatePicker.view "en_us" model.datePicker)
 
     accountChooser =
-      Ui.Chooser.view (forwardTo address AccountChooser) model.accountChooser
+      Html.App.map
+        (address << AccountChooser)
+        (Ui.Chooser.view model.accountChooser)
 
     categoryChooser =
-      Ui.Chooser.view (forwardTo address CategoryChooser) model.categoryChooser
+      Html.App.map
+        (address << CategoryChooser)
+        (Ui.Chooser.view model.categoryChooser)
   in
-    Ui.Container.view { align = "stretch"
-                      , direction = "column"
-                      , compact = True
-                      } []
-      [ Ui.header []
-        [ Ui.icon "android-arrow-back" False [viewModel.backHandler]
-        , Ui.headerTitle [] [text "Edit Transaction"]
-        ]
-      , Ui.panel [classList [("money-track-form", True)]]
-        [ Ui.Container.view { align = "stretch"
-                          , direction = "column"
-                          , compact = False
-                          } []
-          [ Ui.inputGroup "Date" datePicker
-          , Ui.inputGroup "Account" accountChooser
-          , Ui.inputGroup "Category" categoryChooser
-          , Ui.NumberPad.view
-              { bottomLeft = viewModel.bottomLeft
-              , bottomRight = viewModel.bottomRight
-              }
-              (forwardTo address NumberPad)
-              model.numberPad
+    Ui.Container.view
+      { align = "stretch"
+      , direction = "column"
+      , compact = True
+      }
+      []
+      [ Ui.Header.view
+          []
+          [ Ui.Header.icon
+              "android-arrow-back"
+              False
+              [ onClick viewModel.backMsg ]
+          , Ui.Header.title [] [ text "Add Transation" ]
           ]
-        ]
+      , Ui.panel
+          [ classList [ ( "money-track-form", True ) ] ]
+          [ Ui.Container.view
+              { align = "stretch"
+              , direction = "column"
+              , compact = False
+              }
+              []
+              [ Ui.inputGroup "Date" datePicker
+              , Ui.inputGroup "Account" accountChooser
+              , Ui.inputGroup "Category" categoryChooser
+              , Ui.NumberPad.view
+                  { bottomLeft = viewModel.bottomLeft
+                  , bottomRight = viewModel.bottomRight
+                  }
+                  (address << NumberPad)
+                  model.numberPad
+              ]
+          ]
       ]

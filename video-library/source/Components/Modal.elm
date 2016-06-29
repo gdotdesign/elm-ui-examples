@@ -1,58 +1,80 @@
-module Components.Modal where
+module Components.Modal exposing (..)
 
-import Ext.Signal2 exposing ((>>>))
+import Update.Extra.Infix exposing ((:>))
 import Json.Encode as J
-import Effects
+import Html.App
 import Html
 
+import Ui.Helpers.Emitter as Emitter
 import Ui.Container
 import Ui.Button
 import Ui.Modal
 
-type alias Model a b c =
-  { functions : Functions a b c
+type alias Model model entity msg =
+  { functions : Functions model entity msg
   , modal : Ui.Modal.Model
-  , form : a
+  , form : model
+  , entity : Maybe entity
+  , parentId : Int
+  , loading : Bool
   }
 
-type alias Functions a b c =
-  { asParams : a -> List (String, J.Value)
-  , update : c -> a -> (a, Effects.Effects c)
-  , fromEntity : b -> a
-  , isValid : a -> Bool
-  , isNew : a -> Bool
-  , init : a
+type alias Functions model entity msg =
+  { asParams : model -> List (String, J.Value)
+  , update : msg -> model -> (model, Cmd msg)
+  , fromEntity : entity -> model
+  , isValid : model -> Bool
+  , isNew : model -> Bool
+  , init : model
+  , id : entity -> Int
+  , editTexts: (String, String)
+  , newTexts: (String, String)
+  , view : model -> Html.Html msg
+  , get : Int -> (String -> Action entity msg) -> (entity -> Action entity msg) -> Cmd (Action entity msg)
+  , patch : Int -> List (String, J.Value) -> (String -> Action entity msg) -> (entity -> Action entity msg) -> Cmd (Action entity msg)
+  , create : List (String, J.Value) -> (String -> Action entity msg ) -> (entity -> Action entity msg) -> Cmd (Action entity msg)
   }
 
-type alias ViewModel a b c =
-  { view : Signal.Address c -> b -> Html.Html
-  , saveTexts : (String, String)
-  , newTexts : (String, String)
-  , address : Signal.Address a
-  , action : a
-  }
+type Action entity msg
+  = Modal Ui.Modal.Msg
+  | Form msg
+  | Save
+  | Load Int
+  | Loaded entity
+  | Saved entity
+  | FinishLoading
+  | StartLoading
+  | Error String
+  | Create Int
 
-type Action a
-  = Modal Ui.Modal.Action
-  | Form a
-
-init : Functions a b c -> Model a b c
+init : Functions model entity msg -> Model model entity msg
 init functions =
   { modal = Ui.Modal.init
   , functions = functions
   , form = functions.init
+  , entity = Nothing
+  , parentId = 0
+  , loading = False
   }
 
-open : Model a b c -> Model a b c
-open model =
+subscriptions : String -> Sub (Action entity msg)
+subscriptions channel =
+  Sub.batch [ Emitter.listenInt ("edit-" ++ channel) Load
+            , Emitter.listenInt ("create-" ++ channel) Create
+            ]
+
+open : Int -> Model a b c -> Model a b c
+open parentId model =
   { model | modal = Ui.Modal.open model.modal
           , form = model.functions.init
+          , parentId = parentId
   }
 
-openWithEntity : b -> Model a b c -> Model a b c
+openWithEntity : entity -> Model model entity msg -> Model model entity msg
 openWithEntity entity model =
   { model | modal = Ui.Modal.open model.modal
           , form = model.functions.fromEntity entity
+          , entity = Just entity
   }
 
 close : Model a b c -> Model a b c
@@ -67,39 +89,80 @@ asParams : Model a b c -> List (String, J.Value)
 asParams model =
   model.functions.asParams model.form
 
-update: Action a -> Model b c a -> (Model b c a, Effects.Effects (Action a))
+update: Action entity msg -> Model model entity msg -> (Model model entity msg, Cmd (Action entity msg))
 update action model =
   case action of
+    Save ->
+      let
+        params =
+          asParams model
+
+        createParams =
+          params ++ [("folder_id", J.int model.parentId)]
+
+        cmd =
+          Maybe.map (\entity -> model.functions.patch (model.functions.id entity) params Error Saved) model.entity
+          |> Maybe.withDefault (model.functions.create createParams Error Saved)
+      in
+        (model, cmd)
+        :> update StartLoading
+
+    Create parentId ->
+      (open parentId model, Cmd.none)
+
+    Load id ->
+      (model, model.functions.get id Error Loaded)
+      :> update StartLoading
+
+    Loaded entity ->
+      (openWithEntity entity model, Cmd.none)
+      :> update FinishLoading
+
+    StartLoading ->
+      ({ model | loading = True }, Cmd.none)
+
+    FinishLoading ->
+      ({ model | loading = False }, Cmd.none)
+
+    Saved entity ->
+      (close model, Emitter.sendNaked "refresh")
+      :> update FinishLoading
+
+    Error message ->
+      (model, Emitter.sendString "errors" message)
+      :> update FinishLoading
+
     Modal act ->
-      ({ model | modal = Ui.Modal.update act model.modal }, Effects.none)
+      ({ model | modal = Ui.Modal.update act model.modal }, Cmd.none)
+
     Form act ->
       let
-        (form, effect) = model.functions.update act model.form
+        (form, cmd) = model.functions.update act model.form
       in
-        ({ model | form = form }, Effects.map Form effect)
+        ({ model | form = form }, Cmd.map Form cmd)
 
-view: Signal.Address (Action a) -> ViewModel x c a -> Model c d a -> Html.Html
-view address viewModel model =
+view: Model model entity msg -> Html.Html (Action entity msg)
+view model =
   let
     (title, button) =
       if model.functions.isNew model.form then
-        viewModel.newTexts
+        model.functions.newTexts
       else
-        viewModel.saveTexts
+        model.functions.editTexts
   in
     Ui.Modal.view
-      (address >>> Modal)
+      Modal
       { title = title
       , content =
-        [ viewModel.view (address >>> Form) model.form ]
+        [ Html.App.map Form (model.functions.view model.form) ]
       , footer =
         [ Ui.Container.rowEnd []
           [ Ui.Button.view
-            viewModel.address
-            viewModel.action
+            Save
             { kind = "primary"
             , size = "medium"
-            , disabled = not (model.functions.isValid model.form)
+            , disabled = (not (model.functions.isValid model.form) || model.loading)
+            , readonly = False
             , text = button
             }
           ]
