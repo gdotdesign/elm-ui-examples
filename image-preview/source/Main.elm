@@ -89,7 +89,7 @@ update msg model =
         cmd =
           Task.perform (\_ -> Debug.crash "")
             Opened
-            (FileManager.open "image/*")
+            (FileManager.openSingle "image/*")
       in
         ( model, cmd )
 
