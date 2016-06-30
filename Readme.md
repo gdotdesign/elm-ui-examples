@@ -1,4 +1,4 @@
-This repository contains example application that demonstrate how to use Elm-UI:
+This repository contains example applications that demonstrate how to use Elm-UI.
 
 ## Examples
 * [Video Library](./video-library) - An app to manage videos in folders
