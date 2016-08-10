@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "summary": "Elm-UI Project",
-  "repository": "https://github.com/gdotdesign/elm-ui.git",
+  "summary": "Video Library example for Elm-UI.",
+  "repository": "https://github.com/gdotdesign/elm-ui-examples.git",
   "license": "BSD3",
   "native-modules": true,
   "source-directories": [
@@ -11,10 +11,12 @@
   "dependencies": {
     "NoRedInk/elm-decode-pipeline": "1.1.2 <= v < 2.0.0",
     "ccapndave/elm-update-extra": "1.0.0 <= v < 2.0.0",
-    "evancz/url-parser": "1.0.0 <= v < 2.0.0",
     "elm-lang/navigation": "1.0.0 <= v < 2.0.0",
-    "elm-lang/keyboard": "1.0.0 <= v < 2.0.0",
-    "evancz/elm-http": "3.0.1 <= v < 4.0.0"
+    "gdotdesign/elm-ui": "0.2.4 <= v < 1.0.0",
+    "evancz/url-parser": "1.0.0 <= v < 2.0.0",
+    "evancz/elm-http": "3.0.1 <= v < 4.0.0",
+    "elm-lang/html": "1.1.0 <= v < 2.0.0",
+    "elm-lang/core": "4.0.0 <= v < 5.0.0"
   },
   "elm-version": "0.17.0 <= v < 0.18.0"
 }

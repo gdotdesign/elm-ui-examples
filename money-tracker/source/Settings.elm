@@ -38,6 +38,7 @@ type alias ViewModel msg =
 type Msg
   = Affix Ui.Input.Msg
   | Prefix Ui.Input.Msg
+  | NoOp
 
 
 {-| Initializes a settings component.
@@ -68,6 +69,9 @@ update action model =
       in
         ( { model | prefix = prefix }, Cmd.map Prefix effect )
 
+    NoOp ->
+      (model, Cmd.none)
+
 
 {-| Renders a settings component.
 -}
@@ -81,7 +85,7 @@ view address viewModel model =
       Html.App.map (address << Prefix) (Ui.Input.view model.prefix)
 
     backIcon =
-      Ui.Header.icon "android-arrow-back" False [ onClick viewModel.backMsg ]
+      Ui.Header.icon "android-arrow-back" viewModel.backMsg
   in
     Ui.Container.view
       { align = "stretch"
@@ -92,7 +96,7 @@ view address viewModel model =
       [ Ui.Header.view
           []
           [ backIcon
-          , Ui.Header.title [] [ text "Settings" ]
+          , Ui.Header.title "Settings" (address NoOp)
           ]
       , Ui.panel
           []

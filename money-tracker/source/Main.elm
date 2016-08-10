@@ -15,9 +15,9 @@ import Html.App
 import Json.Decode as Json
 import Json.Encode
 
-import Native.Uid
 
 import Ui.Native.LocalStorage as LocalStorage
+import Ui.Native.Uid as Uid
 import Ui.Container
 import Ui.Pager
 import Ui.App
@@ -154,7 +154,7 @@ update msg model =
           Form.data model.store model.form
 
         transaction data =
-          { id = Native.Uid.uid Nothing
+          { id = Uid.uid ()
           , amount = data.amount
           , date = data.date
           , categoryId = data.categoryId

@@ -196,7 +196,7 @@ view model =
     , Html.App.map Player (Player.view model.player)
     , node "video-library" []
       [ Ui.Header.view []
-        [ Ui.Header.title [] [text "Video Library"]
+        [ Ui.Header.title "Video Library" (NavigateFolder 0)
         ]
       , Html.App.map Folders (Folder.view model.folder)
       ]
