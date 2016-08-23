@@ -195,8 +195,13 @@ view model =
     , Html.App.map VideoModal (Modal.view model.videoModal)
     , Html.App.map Player (Player.view model.player)
     , node "video-library" []
-      [ Ui.Header.view []
-        [ Ui.Header.title "Video Library" (NavigateFolder 0)
+      [ Ui.Header.view
+        [ Ui.Header.title
+          { text = "Video Library"
+          , action = Just (NavigateFolder 0)
+          , link = Nothing
+          , target = ""
+          }
         ]
       , Html.App.map Folders (Folder.view model.folder)
       ]
