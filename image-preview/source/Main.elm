@@ -5,11 +5,13 @@ module Main exposing (..)
 
 import Numeral exposing (format)
 import Json.Decode as Json
-import Task
+import Task exposing (Task)
+
 import Html exposing (div, node, span, strong, text, img)
 import Html.Attributes exposing (src, class)
 import Html.Events exposing (on)
 import Html.App
+
 import Ui.Native.FileManager as FileManager exposing (File)
 import Ui.Container
 import Ui.Button
@@ -38,14 +40,15 @@ type Msg
   | App Ui.App.Msg
   | Opened File
   | Read String
-  | Open
+  | Open (Task Never File)
+  | NoOp
 
 
 {-| Initializes an image viewer.
 -}
 init : Model
 init =
-  { app = Ui.App.init "Elm-UI Project"
+  { app = Ui.App.init
   , dataURI = Nothing
   , image = Nothing
   , size = ( 0, 0 )
@@ -84,14 +87,15 @@ update msg model =
         ( { model | image = Just image }, cmd )
 
     -- Open a file browser to load an image
-    Open ->
+    Open task ->
       let
         cmd =
-          Task.perform (\_ -> Debug.crash "")
-            Opened
-            (FileManager.openSingle "image/*")
+          Task.perform (\_ -> Debug.crash "") Opened task
       in
         ( model, cmd )
+
+    NoOp ->
+      ( model, Cmd.none )
 
 
 {-| Renders an image viewer
@@ -110,7 +114,10 @@ view model =
           [ node "image-preview-header"
               []
               [ renderHeader
-              , Ui.Button.primaryBig "Load Image" Open
+              , node "span"
+                [ on "click" (FileManager.openSingleDecoder "image/*" Open) ]
+                [ Ui.Button.primaryBig "Load Image" NoOp
+                ]
               ]
           , node "image-preview-content" [] [ renderImage model ]
           , node "image-preview-info" [] (renderInfo model)

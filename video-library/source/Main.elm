@@ -70,7 +70,7 @@ init : Result String Routes -> (Model, Cmd Msg)
 init data =
   { notifications = Ui.NotificationCenter.init 4000 320
   , folder = Folder.init
-  , app = Ui.App.init "Video Library"
+  , app = Ui.App.init
   , player = Player.init
   , folderModal = Modal.init { fromEntity = FolderForm.fromFolder
                              , asParams = FolderForm.asParams

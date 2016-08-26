@@ -29,7 +29,6 @@ type Msg
   | AccountChooser Ui.Chooser.Msg
   | DatePicker Ui.DatePicker.Msg
   | NumberPad Ui.NumberPad.Msg
-  | NoOp
 
 
 {-| Representation of a form:
@@ -210,9 +209,6 @@ update msg model =
         , Cmd.map DatePicker effect
         )
 
-    NoOp ->
-      (model, Cmd.none)
-
 
 {-| Renders a form.
 -}
@@ -241,11 +237,19 @@ view address viewModel model =
       }
       []
       [ Ui.Header.view
-          []
           [ Ui.Header.icon
-              "android-arrow-back"
-              viewModel.backMsg
-          , Ui.Header.title "Add Transation" (address NoOp)
+              { glyph = "android-arrow-back"
+              , action = Just viewModel.backMsg
+              , link = Nothing
+              , target = ""
+              , size = 32
+              }
+          , Ui.Header.title
+            { text = "Add Transation"
+            , action = Nothing
+            , target = ""
+            , link = Nothing
+            }
           ]
       , Ui.panel
           [ classList [ ( "money-track-form", True ) ] ]

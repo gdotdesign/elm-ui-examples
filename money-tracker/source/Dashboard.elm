@@ -54,7 +54,6 @@ type alias ViewModel msg =
 type Msg
   = PreviousDate
   | NextDate
-  | NoOp
 
 
 {-| Initializes a dashboard.
@@ -74,9 +73,6 @@ update action model =
 
     PreviousDate ->
       { model | date = Ext.Date.previousMonth model.date }
-
-    NoOp ->
-      model
 
 
 {-| Renders a dashboard.
@@ -117,12 +113,20 @@ view address viewModel model =
     {- Header -}
     header =
       Ui.Header.view
-        []
-        [ Ui.Header.title "Dashboard" (address NoOp)
+        [ Ui.Header.title
+          { text = "Dashboard"
+          , action = Nothing
+          , link = Nothing
+          , target = ""
+          }
         , Ui.spacer
         , Ui.Header.icon
-            "android-options"
-            viewModel.optionsMsg
+            { glyph = "android-options"
+            , action = Just viewModel.optionsMsg
+            , target = ""
+            , size = 32
+            , link = Nothing
+            }
         ]
   in
     Ui.Container.column
