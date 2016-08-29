@@ -1,0 +1,13 @@
+@import 'ui';
+
+hr {
+  border: 0;
+  border-top: $border;
+}
+
+p {
+  word-break: break-word;
+  border-bottom: $border;
+  padding-bottom: 15px;
+  margin: 15px 0;
+}
