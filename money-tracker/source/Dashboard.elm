@@ -113,13 +113,20 @@ view address viewModel model =
     {- Header -}
     header =
       Ui.Header.view
-        []
-        [ Ui.Header.title [] [ text "Dashboard" ]
+        [ Ui.Header.title
+          { text = "Dashboard"
+          , action = Nothing
+          , link = Nothing
+          , target = ""
+          }
         , Ui.spacer
         , Ui.Header.icon
-            "android-options"
-            False
-            [ onClick viewModel.optionsMsg ]
+            { glyph = "android-options"
+            , action = Just viewModel.optionsMsg
+            , target = ""
+            , size = 32
+            , link = Nothing
+            }
         ]
   in
     Ui.Container.column

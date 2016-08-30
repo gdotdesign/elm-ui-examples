@@ -70,7 +70,7 @@ init : Result String Routes -> (Model, Cmd Msg)
 init data =
   { notifications = Ui.NotificationCenter.init 4000 320
   , folder = Folder.init
-  , app = Ui.App.init "Video Library"
+  , app = Ui.App.init
   , player = Player.init
   , folderModal = Modal.init { fromEntity = FolderForm.fromFolder
                              , asParams = FolderForm.asParams
@@ -195,8 +195,13 @@ view model =
     , Html.App.map VideoModal (Modal.view model.videoModal)
     , Html.App.map Player (Player.view model.player)
     , node "video-library" []
-      [ Ui.Header.view []
-        [ Ui.Header.title [] [text "Video Library"]
+      [ Ui.Header.view
+        [ Ui.Header.title
+          { text = "Video Library"
+          , action = Just (NavigateFolder 0)
+          , link = Nothing
+          , target = ""
+          }
         ]
       , Html.App.map Folders (Folder.view model.folder)
       ]

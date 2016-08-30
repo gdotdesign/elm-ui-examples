@@ -237,12 +237,19 @@ view address viewModel model =
       }
       []
       [ Ui.Header.view
-          []
           [ Ui.Header.icon
-              "android-arrow-back"
-              False
-              [ onClick viewModel.backMsg ]
-          , Ui.Header.title [] [ text "Add Transation" ]
+              { glyph = "android-arrow-back"
+              , action = Just viewModel.backMsg
+              , link = Nothing
+              , target = ""
+              , size = 32
+              }
+          , Ui.Header.title
+            { text = "Add Transation"
+            , action = Nothing
+            , target = ""
+            , link = Nothing
+            }
           ]
       , Ui.panel
           [ classList [ ( "money-track-form", True ) ] ]
