@@ -1,7 +1,6 @@
 module Forms.Video exposing (..)
 
 import Html exposing (node, text)
-import Html.App
 
 import Json.Encode as J
 import String
@@ -61,9 +60,9 @@ view: Model -> Html.Html Msg
 view model =
   node "video-libaray-video-form" []
     [ Ui.Container.column []
-      [ Ui.inputGroup "Image" (Html.App.map Image (Ui.Input.view model.image))
-      , Ui.inputGroup "Name" (Html.App.map Name (Ui.Input.view model.name))
-      , Ui.inputGroup "Url" (Html.App.map Url (Ui.Input.view model.url))
+      [ Ui.inputGroup "Image" (Html.map Image (Ui.Input.view model.image))
+      , Ui.inputGroup "Name" (Html.map Name (Ui.Input.view model.name))
+      , Ui.inputGroup "Url" (Html.map Url (Ui.Input.view model.url))
       ]
     ]
 

@@ -13,7 +13,7 @@ video-library-item {
     background-position: center;
     background-size: cover;
     position: relative;
-    padding-top: 135%;
+    padding-top: 56.25%;
     display: block;
     border-radius: $border-radius $border-radius 0 0;
     box-shadow: 0px 1px 3px 0px rgba(0,0,0,0.1);
@@ -22,7 +22,25 @@ video-library-item {
 
   &.folder {
     video-library-item-image {
+      cursor: pointer;
       margin: 0 24px;
+
+      &:hover:after {
+        content: "\f29e";
+        font-family: Ionicons;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-size: 60px;
+        border-radius: inherit;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(#000, 0.6);
+      }
     }
 
     ui-container {
@@ -128,9 +146,9 @@ video-library-item {
   }
 
   @each $breakpoint, $num in (
-        2000px 6,
-        1600px 5,
-        1200px 4,
+        2000px 4,
+        1600px 3,
+        1200px 3,
         800px 2) {
     @media (min-width: #{$breakpoint - 400px} )
        and (max-width: #{$breakpoint - 1px}) {

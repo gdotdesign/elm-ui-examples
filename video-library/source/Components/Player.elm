@@ -17,7 +17,7 @@ type alias Model =
 type Msg
   = Close
   | Open Int
-  | Opened Video
+  | Opened (Result String Video)
   | Error String
 
 init : Model
@@ -34,14 +34,18 @@ update msg model =
     Error message ->
       (model, Emitter.sendString "errors" message)
 
-    Opened video ->
-      ({ model | video = Just video }, Cmd.none)
+    Opened result ->
+      case result of
+        Ok video ->
+          ({ model | video = Just video }, Cmd.none)
+        Err message ->
+          (model, Emitter.sendString "errors" message)
 
     Close ->
       ({ model | video = Nothing }, Cmd.none)
 
     Open id ->
-      (model, Types.fetchVideo id Error Opened)
+      (model, Types.fetchVideo id Opened)
 
 view : Model -> Html.Html Msg
 view model =

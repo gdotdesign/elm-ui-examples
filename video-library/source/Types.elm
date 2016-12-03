@@ -79,92 +79,82 @@ folderContentsDecoder =
     |> required "name" Json.string
     |> required "id" Json.int
 
-fetchFolderContents : Int -> (String -> msg) -> (FolderContents -> msg) -> Cmd msg
-fetchFolderContents folderId error action =
+fetchFolderContents : Int -> (Result String FolderContents -> msg) -> Cmd msg
+fetchFolderContents folderId msg =
   Rest.get
     (endpoint ++ "folders/" ++ (toString folderId) ++ "/contents")
     []
     folderContentsDecoder
-    error
-    action
+    msg
 
-fetchVideo : Int -> (String -> msg) -> (Video -> msg) -> Cmd msg
-fetchVideo id error action =
+fetchVideo : Int -> (Result String Video -> msg) -> Cmd msg
+fetchVideo id msg =
   Rest.get
     (endpoint ++ "videos/" ++ (toString id))
     []
     videoDecoder
-    error
-    action
+    msg
 
-fetchFolder : Int -> (String -> msg) -> (Folder -> msg) -> Cmd msg
-fetchFolder id error action =
+fetchFolder : Int -> (Result String Folder -> msg) -> Cmd msg
+fetchFolder id msg =
   Rest.get
     (endpoint ++ "folders/" ++ (toString id))
     []
     folderDecoder
-    error
-    action
+    msg
 
-createVideo : List (String, J.Value) -> (String -> msg ) -> (Video -> msg) -> Cmd msg
-createVideo params error action =
+createVideo : List (String, J.Value) -> (Result String Video -> msg) -> Cmd msg
+createVideo params msg =
   Rest.post
     (endpoint ++ "videos/")
     params
     videoDecoder
-    error
-    action
+    msg
 
-deleteVideo : Int -> (String -> msg) -> (J.Value -> msg) -> Cmd msg
-deleteVideo id error action =
+deleteVideo : Int -> (Result String J.Value -> msg) -> Cmd msg
+deleteVideo id msg =
   Rest.delete
     (endpoint ++ "videos/" ++ (toString id))
     []
     Json.value
-    error
-    action
+    msg
 
-patchVideo : Int -> List (String, J.Value) -> (String -> msg) -> (Video -> msg) -> Cmd msg
-patchVideo id params error action =
+patchVideo : Int -> List (String, J.Value) -> (Result String Video -> msg) -> Cmd msg
+patchVideo id params msg =
   Rest.patch
     (endpoint ++ "videos/" ++ (toString id))
     params
     videoDecoder
-    error
-    action
+    msg
 
-createFolder: List (String, J.Value) -> (String -> msg) -> (Folder -> msg) -> Cmd msg
-createFolder params error action =
+createFolder: List (String, J.Value) -> (Result String Folder -> msg) -> Cmd msg
+createFolder params msg =
   Rest.post
     (endpoint ++ "folders/")
     params
     folderDecoder
-    error
-    action
+    msg
 
-deleteFolder : Int -> (String -> msg) -> (Json.Value -> msg) -> Cmd msg
-deleteFolder id error action =
+deleteFolder : Int -> (Result String J.Value -> msg) -> Cmd msg
+deleteFolder id msg =
   Rest.delete
     (endpoint ++ "folders/" ++ (toString id))
     []
     Json.value
-    error
-    action
+    msg
 
-patchFolder : Int -> List (String, J.Value) -> (String -> msg) -> (Folder -> msg) -> Cmd msg
-patchFolder id params error action =
+patchFolder : Int -> List (String, J.Value) -> (Result String Folder -> msg) -> Cmd msg
+patchFolder id params msg =
   Rest.patch
     (endpoint ++ "folders/" ++ (toString id))
     params
     folderDecoder
-    error
-    action
+    msg
 
-search : String -> (String -> msg) -> (SearchData -> msg) -> Cmd msg
-search query error action =
+search : String -> (Result String SearchData -> msg) -> Cmd msg
+search query msg =
   Rest.get
     (endpoint ++ "video-library/search")
     [("query", query)]
     searchDataDecoder
-    error
-    action
+    msg
