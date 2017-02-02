@@ -1,78 +1,130 @@
 module Main exposing (..)
 
+{-| This is an example how to implement a simple drag and drop functionanily
+with Ui.Helpers.Drag.
+-}
 import Html.Attributes exposing (style)
 import Html exposing (div, text)
-import Html.App
 
-import Html.Events.Geometry exposing (Dimensions, onWithDimensions)
+import DOM exposing (Position)
+
 import Ui.Helpers.Drag as Drag
 
+
+{-| The model:
+  - startPosition - the position of the box when the drag starts
+  - uid - the unique id for the drag (not used in this example)
+  - position - the current position of the box
+  - drag - the model for the Drag
+-}
 type alias Model =
-  { position : (Float, Float)
-  , startPosition : (Float, Float)
-  , drag : Drag.Model
+  { startPosition : Position
+  , position : Position
+  , drag : Drag.Drag
+  , uid : String
   }
 
+
+{-| The messages:
+  - Lift - triggered when the mouse is down
+  - Move - triggered when the mouse is moving
+  - End - triggered when the mouse is up
+-}
 type Msg
-  = MouseDown Dimensions
-  | MouseMove (Float, Float)
-  | Click Bool
+  = Lift Position
+  | Move Position
+  | End
 
 
-init : Model
+{-| Initialize the model.
+-}
+init : ( Model, Cmd Msg )
 init =
-  { position = (20, 20)
-  , startPosition = (0,0)
-  , drag = Drag.init
-  }
+  ( { startPosition = { left = 0, top = 0 }
+    , position = { left = 0, top = 0 }
+    , drag = Drag.init
+    , uid = "drag"
+    }
+  , Cmd.none
+  )
 
 
-update : Msg -> Model -> (Model, Cmd Msg)
+{-| Update the model when something happens.
+-}
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
-    MouseDown (mousePosition, dimensions, windowSize) ->
-      ({ model
-       | drag = Drag.lift dimensions mousePosition model.drag
-       , startPosition = model.position
-       }, Cmd.none)
-
-    MouseMove (left, top) ->
+    Lift position ->
       let
-        diff =
-          Drag.diff left top model.drag
-
-        position =
-          ( (fst model.startPosition) + diff.top
-          , (snd model.startPosition) + diff.left)
+        -- Set the start position and start the drag with Drag.lift
+        updatedModel =
+          { model | startPosition = model.position
+          }
+          |> Drag.lift position
       in
-        ({ model | position = position }, Cmd.none)
+       ( updatedModel, Cmd.none )
 
-    Click pressed ->
-      ({ model | drag = Drag.handleClick pressed model.drag }, Cmd.none)
+    Move position ->
+      let
+        -- Get the diff between the start position and the current position
+        diff =
+          Drag.diff position model
+
+        -- Calculate new positions
+        newPosition =
+          { left = model.startPosition.left + diff.left
+          , top = model.startPosition.top + diff.top
+          }
+      in
+        ( { model | position = newPosition }, Cmd.none )
+
+    End ->
+      -- End the drag
+      ( Drag.end model, Cmd.none)
 
 
+{-| Subscriptions for the drag.
+-}
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Drag.subscriptions MouseMove Click model.drag.dragging
+  Sub.batch
+    [ Drag.onMove Move model
+    , Drag.onEnd End model
+    ]
 
 
+{-| The view.
+-}
 view : Model -> Html.Html Msg
 view model =
   div
     [ style
-      [ ("top", (toString (fst model.position)) ++ "px")
-      , ("left", (toString (snd model.position)) ++ "px")
+      [ ("left", (toString model.position.left) ++ "px")
+      , ("top", (toString model.position.top) ++ "px")
+
+      , ("border", "1px solid #DDD")
+      , ("background", "#f5f5f5")
+      , ("position", "absolute")
+      , ("font-family", "sans")
+      , ("padding", "40px")
+      , ("cursor", "move")
+
+      , ("-webkit-user-select", "none")
+      , ("-moz-user-select", "none")
+      , ("-ms-user-select", "none")
+      , ("user-select", "none")
       ]
-    , onWithDimensions "mousedown" False MouseDown
+    -- Attach the lift handler, this decodes the mouse the position
+    , Drag.liftHandler Lift
     ]
     [ text "Drag ME!!" ]
 
 
+main : Program Never Model Msg
 main =
-  Html.App.program
-    { init = ( init, Cmd.none )
-    , view = view
+  Html.program
+    { subscriptions = subscriptions
     , update = update
-    , subscriptions = \model ->
-        subscriptions model
+    , view = view
+    , init = init
     }

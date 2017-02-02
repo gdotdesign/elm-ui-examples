@@ -16,9 +16,9 @@ This repository contains example applications that demonstrate how to use Elm-UI
 
 ## Running an example
 After cloning the repository you can run each application with the following
-steps (Elm-UI must be installed):
+steps (Yarn must be installed):
 
 * `cd example`
-* `elm-ui install`
-* `elm-ui server`
-* open http://localhost:8002
+* `yarn`
+* `yarn start`
+* open http://localhost:8002/source/Main.elm
