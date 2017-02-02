@@ -5,7 +5,6 @@ import String
 import UrlParser exposing (Parser, (</>))
 
 import Html exposing (node, text)
-import Html.App
 
 import Ui.Helpers.Emitter as Emitter
 import Ui.NotificationCenter
@@ -48,6 +47,7 @@ type Msg
   | Notify String
   | NavigateFolder Int
   | NavigateVideo Int
+  | UrlChange Navigation.Location
 
 type Routes
   = Folder Int
@@ -57,16 +57,12 @@ type Routes
 routes : Parser (Routes -> msg) msg
 routes =
   UrlParser.oneOf
-    [ UrlParser.format FolderAndVideo (UrlParser.int </> UrlParser.int)
-    , UrlParser.format Folder (UrlParser.int)
-    , UrlParser.format NotFound (UrlParser.string)
+    [ UrlParser.map FolderAndVideo (UrlParser.int </> UrlParser.int)
+    , UrlParser.map Folder (UrlParser.int)
+    , UrlParser.map NotFound (UrlParser.string)
     ]
 
-routeParser : Navigation.Location -> Result String Routes
-routeParser location =
-  UrlParser.parse identity routes (String.dropLeft 1 location.pathname)
-
-init : Result String Routes -> (Model, Cmd Msg)
+init : Navigation.Location -> (Model, Cmd Msg)
 init data =
   { notifications = Ui.NotificationCenter.init 4000 320
   , folder = Folder.init
@@ -101,11 +97,26 @@ init data =
                             , create = Types.createVideo
                             }
   }
-  |> urlUpdate data
+  |> update (UrlChange data)
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case log "a" msg of
+    UrlChange location ->
+      case UrlParser.parsePath routes location of
+        Just route ->
+          case route of
+            Folder folderId ->
+              (model, Emitter.sendInt "open-folder" folderId)
+            FolderAndVideo folderId videoId ->
+              (model, Cmd.batch [ Emitter.sendInt "open-folder" folderId
+                                , Emitter.sendInt "open-video" videoId
+                                ])
+            NotFound _ ->
+              (model, Emitter.sendInt "open-folder" 0)
+        Nothing ->
+          (model, Emitter.sendInt "open-folder" 0)
+
     Notify message ->
       let
         (notifications, effect) =
@@ -168,32 +179,13 @@ update msg model =
 
     _ -> (model, Cmd.none)
 
-urlUpdate : Result String Routes -> Model -> (Model, Cmd Msg)
-urlUpdate data model =
-  let
-    _ = log "a" data
-  in
-    case data of
-      Ok route ->
-        case route of
-          Folder folderId ->
-            (model, Emitter.sendInt "open-folder" folderId)
-          FolderAndVideo folderId videoId ->
-            (model, Cmd.batch [ Emitter.sendInt "open-folder" folderId
-                              , Emitter.sendInt "open-video" videoId
-                              ])
-          NotFound _ ->
-            (model, Emitter.sendInt "open-folder" 0)
-      Err message ->
-        (model, Emitter.sendInt "open-folder" 0)
-
 view: Model -> Html.Html Msg
 view model =
   Ui.App.view App model.app
     [ Ui.NotificationCenter.view Notifications model.notifications
-    , Html.App.map FolderModal (Modal.view model.folderModal)
-    , Html.App.map VideoModal (Modal.view model.videoModal)
-    , Html.App.map Player (Player.view model.player)
+    , Html.map FolderModal (Modal.view model.folderModal)
+    , Html.map VideoModal (Modal.view model.videoModal)
+    , Html.map Player (Player.view model.player)
     , node "video-library" []
       [ Ui.Header.view
         [ Ui.Header.title
@@ -203,7 +195,7 @@ view model =
           , target = ""
           }
         ]
-      , Html.App.map Folders (Folder.view model.folder)
+      , Html.map Folders (Folder.view model.folder)
       ]
     ]
 
@@ -211,11 +203,10 @@ main =
   let
     model = init
   in
-    Navigation.program (Navigation.makeParser routeParser)
+    Navigation.program UrlChange
       { init = init
       , view = view
       , update = update
-      , urlUpdate = urlUpdate
       , subscriptions = \model -> Sub.batch [ Sub.map Folders (Folder.subscriptions model.folder)
                                             , Sub.map Player Player.subscriptions
                                             , Sub.map VideoModal (Modal.subscriptions "video")

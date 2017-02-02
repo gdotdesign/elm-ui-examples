@@ -5,7 +5,6 @@ import Task
 
 import Html exposing (node, text, div, b, span)
 import Html.Events exposing (onClick)
-import Html.App
 
 import Components.Item as Item
 import Types exposing (FolderContents, Video, Folder)
@@ -31,8 +30,7 @@ type Msg
   | FabMenu Ui.DropdownMenu.Msg
   | Video Int Item.Msg
   | Folder Int Item.Msg
-  | Error String
-  | Loaded FolderContents
+  | Loaded (Result String FolderContents)
   | FinishLoading
   | CreateVideo
   | CreateFolder
@@ -78,7 +76,7 @@ subscriptions model =
 
 initialize : Model -> Cmd Msg
 initialize model =
-  Task.perform (\_ -> Debug.crash "Never gonna happen") (\_ -> Load model.current) (Task.succeed ())
+  Task.perform (\_ -> Load model.current) (Task.succeed ())
 
 setData : FolderContents -> Model -> Model
 setData contents model =
@@ -92,10 +90,6 @@ setData contents model =
 update: Msg -> Model -> (Model, Cmd Msg)
 update action model =
   case action of
-    Error message ->
-      (model, Emitter.sendString "errors" message)
-        :> update FinishLoading
-
     CreateFolder ->
       ( { model | fabMenu = Ui.DropdownMenu.close model.fabMenu }
       , Emitter.sendInt "create-folder" model.current)
@@ -118,16 +112,24 @@ update action model =
       (model, Cmd.none)
        :> update (Load model.current)
 
-    Loaded contents ->
-      (setData contents model, Cmd.none)
-        :> update FinishLoading
+    Loaded result ->
+      let
+        updatedStuff =
+          case result of
+            Ok contents ->
+              (setData contents model, Cmd.none)
+            Err message ->
+              (model, Emitter.sendString "errors" message)
+      in
+        updatedStuff
+          :> update FinishLoading
 
     FinishLoading ->
       ({ model | loader = Ui.Loader.finish model.loader }, Cmd.none)
 
     Load id ->
       let
-        restCmd = Types.fetchFolderContents id Error Loaded
+        restCmd = Types.fetchFolderContents id Loaded
         (loader, cmd) = Ui.Loader.start model.loader
       in
         ({ model | loader = loader }, Cmd.batch [restCmd, Cmd.map Loader cmd])
@@ -194,7 +196,7 @@ listUpdate id act tagger items =
 
     updatedList = List.map updateItem items
   in
-    (List.map fst updatedList, Cmd.batch (List.map snd updatedList))
+    (List.map Tuple.first updatedList, Cmd.batch (List.map Tuple.second updatedList))
 
 view : Model -> Html.Html Msg
 view model =
@@ -257,9 +259,11 @@ view model =
 
 renderItems : (Int -> Item.Msg -> Msg) -> List Item.Model -> List (Html.Html Msg)
 renderItems action items =
-  List.map (renderItem action) items
+  items
+    |> List.sortBy .name
+    |> List.map (renderItem action)
 
 
 renderItem : (Int -> Item.Msg -> Msg) -> Item.Model -> Html.Html Msg
 renderItem action model =
-  Html.App.map (action model.id) (Item.view model)
+  Html.map (action model.id) (Item.view model)

@@ -2,7 +2,6 @@ module Components.Modal exposing (..)
 
 import Update.Extra.Infix exposing ((:>))
 import Json.Encode as J
-import Html.App
 import Html
 
 import Ui.Helpers.Emitter as Emitter
@@ -30,9 +29,9 @@ type alias Functions model entity msg =
   , editTexts: (String, String)
   , newTexts: (String, String)
   , view : model -> Html.Html msg
-  , get : Int -> (String -> Action entity msg) -> (entity -> Action entity msg) -> Cmd (Action entity msg)
-  , patch : Int -> List (String, J.Value) -> (String -> Action entity msg) -> (entity -> Action entity msg) -> Cmd (Action entity msg)
-  , create : List (String, J.Value) -> (String -> Action entity msg ) -> (entity -> Action entity msg) -> Cmd (Action entity msg)
+  , get : Int -> (Result String entity -> Action entity msg) -> Cmd (Action entity msg)
+  , patch : Int -> List (String, J.Value) -> (Result String entity -> Action entity msg) -> Cmd (Action entity msg)
+  , create : List (String, J.Value) -> (Result String entity -> Action entity msg ) -> Cmd (Action entity msg)
   }
 
 type Action entity msg
@@ -40,8 +39,8 @@ type Action entity msg
   | Form msg
   | Save
   | Load Int
-  | Loaded entity
-  | Saved entity
+  | Loaded (Result String entity)
+  | Saved (Result String entity)
   | FinishLoading
   | StartLoading
   | Error String
@@ -101,8 +100,8 @@ update action model =
           params ++ [("folder_id", J.int model.parentId)]
 
         cmd =
-          Maybe.map (\entity -> model.functions.patch (model.functions.id entity) params Error Saved) model.entity
-          |> Maybe.withDefault (model.functions.create createParams Error Saved)
+          Maybe.map (\entity -> model.functions.patch (model.functions.id entity) params Saved) model.entity
+          |> Maybe.withDefault (model.functions.create createParams Saved)
       in
         (model, cmd)
         :> update StartLoading
@@ -111,12 +110,16 @@ update action model =
       (open parentId model, Cmd.none)
 
     Load id ->
-      (model, model.functions.get id Error Loaded)
+      (model, model.functions.get id Loaded)
       :> update StartLoading
 
-    Loaded entity ->
-      (openWithEntity entity model, Cmd.none)
-      :> update FinishLoading
+    Loaded result ->
+      case result of
+        Ok entity ->
+          (openWithEntity entity model, Cmd.none)
+          :> update FinishLoading
+        Err message ->
+          update (Error message) model
 
     StartLoading ->
       ({ model | loading = True }, Cmd.none)
@@ -124,9 +127,13 @@ update action model =
     FinishLoading ->
       ({ model | loading = False }, Cmd.none)
 
-    Saved entity ->
-      (close model, Emitter.sendNaked "refresh")
-      :> update FinishLoading
+    Saved result ->
+      case result of
+        Ok entity ->
+          (close model, Emitter.sendNaked "refresh")
+          :> update FinishLoading
+        Err message ->
+          update (Error message) model
 
     Error message ->
       (model, Emitter.sendString "errors" message)
@@ -154,7 +161,7 @@ view model =
       Modal
       { title = title
       , content =
-        [ Html.App.map Form (model.functions.view model.form) ]
+        [ Html.map Form (model.functions.view model.form) ]
       , footer =
         [ Ui.Container.rowEnd []
           [ Ui.Button.view

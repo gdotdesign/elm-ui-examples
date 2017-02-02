@@ -32,8 +32,7 @@ type Msg
   | Open
   | Delete
   | Edit
-  | Deleted Json.Value
-  | Error String
+  | Deleted (Result String Json.Value)
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -48,19 +47,20 @@ update action model =
     Edit ->
       (closeMenu model, Emitter.sendInt ("edit-" ++ model.kind) model.id)
 
-    Deleted _ ->
-      (closeMenu model, Emitter.sendNaked "refresh")
-
-    Error message ->
-      (model, Emitter.sendString "errors" message)
+    Deleted result ->
+      case result of
+        Ok _ ->
+          (closeMenu model, Emitter.sendNaked "refresh")
+        Err message ->
+          (model, Emitter.sendString "errors" message)
 
     Delete ->
       let
         cmd =
           if model.kind == "video" then
-            Types.deleteVideo model.id Error Deleted
+            Types.deleteVideo model.id Deleted
           else
-            Types.deleteFolder model.id Error Deleted
+            Types.deleteFolder model.id Deleted
       in
         (model, cmd)
 
