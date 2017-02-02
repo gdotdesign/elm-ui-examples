@@ -1,75 +1,83 @@
 module Main exposing (..)
 
-import Html.Attributes exposing (classList, tabindex)
-import Html exposing (div, span, strong, text)
-import Html.Events exposing (on)
-import Html.App
+{-| This example shows how to implement a simple dropdown using
+Ui.Helpers.Dropdown.
+-}
+import Html exposing (node, button, text, div)
+import Html.Attributes exposing (href, rel)
+import Html.Events exposing (onClick)
 
-import Json.Decode as Json
-import Mouse
-
-import Ui.Helpers.Dropdown
+import Ui.Helpers.Dropdown as Dropdown
 import Ui
 
-
+{-| The model for our dropdown.
+-}
 type alias Model =
-  { dropdownPosition : String
-  , open : Bool
+  { dropdown : Dropdown.Dropdown
+  , uid : String
   }
 
 
+{-| Messages for our dropdown.
+-}
 type Msg
-  = Open Ui.Helpers.Dropdown.Dimensions
-  | Close
-  | NoOp
+  = Dropdown Dropdown.Msg
+  | Open
 
 
+{-| Initialize our dropdown.
+-}
 init : Model
 init =
-  { dropdownPosition = "bottom-right"
-  , open = False
-  }
+  ( { dropdown = Dropdown.init
+    , uid = "my-dropdown"
+    }
+    |> Dropdown.offset 5
+  , Cmd.none
+  )
 
 
+{-| Updates for our dropdown.
+-}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
-    Open dimensions ->
-      ( Ui.Helpers.Dropdown.openWithDimensions dimensions model, Cmd.none )
+    Open ->
+      ( Dropdown.open model, Cmd.none )
 
-    Close ->
-      ( Ui.Helpers.Dropdown.close model, Cmd.none )
-
-    NoOp ->
-      ( model, Cmd.none )
+    Dropdown msg ->
+      ( Dropdown.update msg model, Cmd.none )
 
 
+{-| Render a link for the styles and our dropdown.
+-}
 view : Model -> Html.Html Msg
 view model =
-  let
-    classes =
-      classList
-        [ ( "my-dropdown", True )
-        , ( "dropdown-open", model.open )
-        ]
-  in
-    div [ classes ]
-      [ span
-          [ tabindex 0
-          , Ui.Helpers.Dropdown.onWithDimensions "focus" Open
-          , on "blur" (Json.succeed Close)
-          ]
-          [ text "Open" ]
-      , Ui.Helpers.Dropdown.view NoOp
-          model.dropdownPosition
-          [ text "Dropdown Contents" ]
-      ]
+  div []
+    [ node "link" [ rel "stylesheet", href "style.css" ] []
+    , Dropdown.view
+      { children = [ button [ onClick Open ] [ text "Open" ] ]
+      , contents = [ text "Contents..." ]
+      , address = Dropdown
+      , attributes = []
+      , tag = "span"
+      }
+      model
+    ]
 
 
+{-| Subscriptions for our dropdown.
+-}
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Sub.map Dropdown (Dropdown.subscriptions model)
+
+
+main : Program Never Model Msg
 main =
-  Html.App.program
-    { init = ( init, Cmd.none )
-    , view = view
+  Html.program
+    { subscriptions = subscriptions
     , update = update
-    , subscriptions = \_ -> Sub.none
+    , view = view
+    , init = init
     }

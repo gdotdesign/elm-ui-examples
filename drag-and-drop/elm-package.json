@@ -16,7 +16,7 @@
   "dependency-sources": {
     "gdotdesign/elm-ui": {
       "url": "git@github.com:gdotdesign/elm-ui",
-      "ref": "7a2b62cc74f8441ca5d62801729e851637506ed6"
+      "ref": "e935e122e65cc23e0d1e7626510e23a09eb6875c"
     }
   },
   "elm-version": "0.17.0 <= v < 0.18.0"
