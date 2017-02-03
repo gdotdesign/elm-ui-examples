@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "install": "elm-install",
+    "start": "elm-reactor -p 8002"
+  },
+  "dependencies": {
+    "elm": "^0.18.0",
+    "elm-github-install": "^0.3.0"
+  }
+}

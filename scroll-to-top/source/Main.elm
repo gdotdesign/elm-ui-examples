@@ -1,64 +1,59 @@
-module Main exposing (..)
-
+{-| This is an example showing how to scroll to the top of the page Elm-UI.
+-}
 import Html exposing (div, span, strong, text)
 import Html.Attributes exposing (style)
-import Html.App
 
 import Ui.Button
 
-import Dom.Scroll
-import Task
-import Dom
+-- This is from https://github.com/gdotdesign/elm-dom
+import DOM
 
-
-type alias Model =
-  {}
-
-
+{-| Our message.
+-}
 type Msg
   = ToTop
-  | Scrolled ()
-  | NotFound Dom.Error
 
 
-init : Model
-init =
-  {}
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
+{-| Our update.
+-}
+update : Msg -> {} -> {}
 update msg model =
   case msg of
     ToTop ->
-      let
-        task =
-          Dom.Scroll.toTop "body"
-      in
-        ( model, Task.perform NotFound Scrolled task )
-
-    Scrolled () ->
-      ( model, Cmd.none )
-
-    NotFound _ ->
-      ( model, Cmd.none )
+      -- We can synchronously scroll and get a result
+      case DOM.setScrollTopSync 0 "body" of
+        Ok () -> model
+        Err error -> model
 
 
-view : Model -> Html.Html Msg
+{-| Our view.
+-}
+view : {} -> Html.Html Msg
 view model =
   div
-    [ style
-        [ ( "margin", "40px" )
-        , ( "padding-top", "1000px" )
-        ]
+  [ style
+    [ ( "font-family", "sans" )
+    , ( "margin", "40px" )
     ]
-    [ Ui.Button.primary "To Top!" ToTop
+  ]
+  [ span [ ] [ text "Scroll down and push the button!" ]
+  , div
+    [ style [ ( "padding-top", "1000px" ) ] ]
+    [ Ui.Button.view ToTop
+      { disabled = False
+      , readonly = False
+      , text = "To Top!"
+      , kind = "primary"
+      , size = "medium"
+      }
     ]
+  ]
 
 
+main : Program Never {} Msg
 main =
-  Html.App.program
-    { init = ( init, Cmd.none )
+  Html.beginnerProgram
+    { model = {}
     , view = view
     , update = update
-    , subscriptions = \_ -> Sub.none
     }
