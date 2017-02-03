@@ -7,7 +7,7 @@ import List.Extra
 import Ext.Date
 import Date
 
-import Html.Attributes exposing (classList)
+import Html.Attributes exposing (classList, class)
 import Html.Events exposing (onClick)
 import Html exposing (div, text)
 
@@ -19,7 +19,7 @@ import Ui.Container
 import Ui
 
 import Types as Types exposing (..)
-
+import Icons
 
 {-| Messages that a form can receive.
 -}
@@ -173,42 +173,42 @@ data store model =
 {-| Updates a form.
 -}
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-  case msg of
-    NumberPad act ->
+update msg_ model =
+  case msg_ of
+    NumberPad msg ->
       let
-        ( numberPad, effect ) =
-          Ui.NumberPad.update act model.numberPad
+        ( numberPad, cmd ) =
+          Ui.NumberPad.update msg model.numberPad
       in
         ( { model | numberPad = numberPad }
-        , Cmd.map NumberPad effect
+        , Cmd.map NumberPad cmd
         )
 
-    AccountChooser act ->
+    AccountChooser msg ->
       let
-        ( accountChooser, effect ) =
-          Ui.Chooser.update act model.accountChooser
+        ( accountChooser, cmd ) =
+          Ui.Chooser.update msg model.accountChooser
       in
         ( { model | accountChooser = accountChooser }
-        , Cmd.map AccountChooser effect
+        , Cmd.map AccountChooser cmd
         )
 
-    CategoryChooser act ->
+    CategoryChooser msg ->
       let
-        ( categoryChooser, effect ) =
-          Ui.Chooser.update act model.categoryChooser
+        ( categoryChooser, cmd ) =
+          Ui.Chooser.update msg model.categoryChooser
       in
         ( { model | categoryChooser = categoryChooser }
-        , Cmd.map CategoryChooser effect
+        , Cmd.map CategoryChooser cmd
         )
 
-    DatePicker act ->
+    DatePicker msg ->
       let
-        ( datePicker, effect ) =
-          Ui.DatePicker.update act model.datePicker
+        ( datePicker, cmd ) =
+          Ui.DatePicker.update msg model.datePicker
       in
         ( { model | datePicker = datePicker }
-        , Cmd.map DatePicker effect
+        , Cmd.map DatePicker cmd
         )
 
 
@@ -233,15 +233,15 @@ view address viewModel model =
         (Ui.Chooser.view model.categoryChooser)
   in
     Ui.Container.view
-      { align = "stretch"
-      , direction = "column"
+      { direction = "column"
+      , align = "stretch"
       , compact = True
       }
       []
       [ Ui.Header.view
           [ Ui.Header.icon
-              { glyph = text "android-arrow-back"
-              , action = Just viewModel.backMsg
+              { action = Just viewModel.backMsg
+              , glyph = Icons.back []
               , link = Nothing
               , target = ""
               , size = 32
@@ -254,19 +254,28 @@ view address viewModel model =
             }
           ]
       , div
-          [ classList [ ( "money-track-form", True ) ] ]
+          [ classList [ ( "form", True ) ] ]
           [ Ui.Container.view
               { align = "stretch"
               , direction = "column"
               , compact = False
               }
               []
-              [ div [] [ text "Date", datePicker ]
-              , div [] [ text "Account", accountChooser ]
-              , div [] [ text "Category", categoryChooser ]
+              [ div [ class "field" ]
+                [ div [ class "field-label" ] [ text "Date" ]
+                , datePicker
+                ]
+              , div [ class "field" ]
+                [ div [ class "field-label" ] [ text "Account" ]
+                , accountChooser
+                ]
+              , div [ class "field" ]
+                [ div [ class "field-label" ] [ text "Category" ]
+                , categoryChooser
+                ]
               , Ui.NumberPad.view
-                  { bottomLeft = viewModel.bottomLeft
-                  , bottomRight = viewModel.bottomRight
+                  { bottomRight = viewModel.bottomRight
+                  , bottomLeft = viewModel.bottomLeft
                   , address = (address << NumberPad)
                   }
                   model.numberPad

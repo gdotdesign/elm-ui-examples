@@ -10,7 +10,6 @@ import Date.Extra.Config.Configs as DateConfigs
 import Date.Extra.Format exposing (format)
 import Date
 
-
 {-| Encodes a date object.
 -}
 encodeDate : Date.Date -> Json.Value

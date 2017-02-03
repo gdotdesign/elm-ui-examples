@@ -1,18 +1,20 @@
 module Main exposing (..)
 
+{-| This is an example of a medium app, that has multiple pages for multiple
+features.
+-}
 import Update.Extra.Infix exposing ((:>))
 import Debug exposing (log)
 import Ext.Date
 import Task
 import Date
 
-import Html.Attributes exposing (classList)
-import Html exposing (div, text, node)
+import Html.Attributes exposing (classList, href, rel)
 import Html.Events exposing (onClick, onMouseDown)
+import Html exposing (div, text, node)
 
 import Json.Decode as Json
 import Json.Encode
-
 
 import Ui.Native.Uid as Uid
 import Ui.Container
@@ -28,19 +30,19 @@ import Dashboard as Dashboard
 import Settings as Settings
 import Form as Form
 
-
+{-| Messages for the app.
+-}
 type Msg
-  = Dashboard Dashboard.Msg
+  = Loaded (Result Storage.Error.Error (Maybe String))
+  | Saved (Result Storage.Error.Error ())
+  | Dashboard Dashboard.Msg
   | Settings Settings.Msg
   | Pager Ui.Pager.Msg
-  | Form Form.Msg
   | SelectPage Int
+  | Form Form.Msg
   | Error String
-  | Loaded (Result Storage.Error.Error (Maybe String))
-  | Saved (Result Storage.Error.Error ())
   | SaveStore
   | Save
-  | NoOp
 
 
 {-| Representation of a money tracker application.
@@ -60,9 +62,9 @@ init : ( Model, Cmd Msg )
 init =
   let
     initialCategories =
-      [ { id = "0", name = "Transportation", icon = "android-bus" }
-      , { id = "1", name = "Food", icon = "android-cart" }
-      , { id = "2", name = "Bills", icon = "cash" }
+      [ { id = "0", name = "Transportation", icon = "android-bus"  }
+      , { id = "1", name = "Food",           icon = "android-cart" }
+      , { id = "2", name = "Bills",          icon = "cash"         }
       ]
 
     initialAccounts =
@@ -97,32 +99,32 @@ init =
 {-| Updates a money tracker.
 -}
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-  case msg of
-    {- Sub components. -}
-    Dashboard act ->
-      ( { model | dashboard = Dashboard.update act model.dashboard }, Cmd.none )
+update msg_ model =
+  case msg_ of
+    Dashboard msg ->
+      ( { model | dashboard = Dashboard.update msg model.dashboard }
+      , Cmd.none )
 
-    Pager act ->
-      ( { model | pager = Ui.Pager.update act model.pager }, Cmd.none )
+    Pager msg ->
+      ( { model | pager = Ui.Pager.update msg model.pager }
+      , Cmd.none )
 
-    Form act ->
+    Form msg ->
       let
-        ( form, effect ) =
-          Form.update act model.form
+        ( form, cmd ) =
+          Form.update msg model.form
       in
-        ( { model | form = form }, Cmd.map Form effect )
+        ( { model | form = form }, Cmd.map Form cmd )
 
-    Settings act ->
+    Settings msg ->
       let
-        ( settings, effect ) =
-          Settings.update act model.settings
+        ( settings, cmd ) =
+          Settings.update msg model.settings
       in
         ( updateSettings { model | settings = settings }
-        , Cmd.map Settings effect
+        , Cmd.map Settings cmd
         )
 
-    {- Updates -}
     SelectPage page ->
       let
         pager =
@@ -144,12 +146,12 @@ update msg model =
           Form.data model.store model.form
 
         transaction data =
-          { id = Uid.uid ()
-          , amount = data.amount
-          , date = data.date
-          , categoryId = data.categoryId
+          { categoryId = data.categoryId
           , accountId = data.accountId
           , comment = data.comment
+          , amount = data.amount
+          , date = data.date
+          , id = Uid.uid ()
           }
 
         updatedModel =
@@ -170,7 +172,6 @@ update msg model =
           :> update (SelectPage 0)
           :> update SaveStore
 
-    {- Persistence -}
     Loaded result ->
       case result of
         Ok maybeData ->
@@ -224,9 +225,6 @@ update msg model =
       in
         ( model, Cmd.none )
 
-    NoOp ->
-      ( model, Cmd.none )
-
 
 {-| Renders a money tracker.
 -}
@@ -268,9 +266,9 @@ view model =
       in
         Form.view Form viewModel model.form
   in
-    div
-      [ classList [ ( "money-track", True ) ] ]
-      [ Ui.Pager.view
+    div []
+      [ node "link" [ rel "stylesheet", href "style.css" ] []
+      , Ui.Pager.view
           { pages =
             [ dashboard
             , form
@@ -314,16 +312,18 @@ updateSettings model =
   }
 
 
-gatherSubs : Model -> Sub Msg
-gatherSubs model =
+{-| Subscriptions for the app.
+-}
+subscriptions : Model -> Sub Msg
+subscriptions model =
   Sub.batch [ Sub.map Form (Form.subscriptions model.form) ]
 
 
 main : Program Never Model Msg
 main =
   Html.program
-    { init = init
-    , view = view
+    { subscriptions = subscriptions
     , update = update
-    , subscriptions = gatherSubs
+    , view = view
+    , init = init
     }

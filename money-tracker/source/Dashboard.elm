@@ -2,8 +2,8 @@ module Dashboard exposing (..)
 
 {-| This is the main page of the app:
   - There is a month indicator and arrows in order to change it
-  - The spending for a given month is shown
   - The breakdown of the spending is shown by category
+  - The spending for a given month is shown
 -}
 
 import List.Extra
@@ -25,6 +25,7 @@ import Ui.Fab
 import Ui
 
 import Types exposing (..)
+import Icons
 
 
 {-| Representation of a dashboard:
@@ -35,11 +36,11 @@ type alias Model =
 
 
 {-| Representation of a view model for a dashboard:
+  - **addMsg** - the msg to call when clicking on the floating action button
+  - **optionsMsg** - the msg to call when clicking the options icon
   - **transactions** - the transactions to display
   - **categories** - the categories to display
   - **settings** - the settings
-  - **optionsMsg** - the msg to call when clicking the options icon
-  - **addMsg** - the msg to call when clicking on the floating action button
 -}
 type alias ViewModel msg =
   { transactions : List Transaction
@@ -67,8 +68,8 @@ init =
 {-| Updates a dashboard.
 -}
 update : Msg -> Model -> Model
-update action model =
-  case action of
+update msg model =
+  case msg of
     NextDate ->
       { model | date = Ext.Date.nextMonth model.date }
 
@@ -106,7 +107,7 @@ view address viewModel model =
         []
         [ Ui.Icons.chevronLeft [ onClick (address PreviousDate) ]
         , div
-            [ class "mt-dashboard-month"]
+            [ class "dashboard-month"]
             [ text month ]
         , Ui.Icons.chevronRight [ onClick (address NextDate) ]
         ]
@@ -123,7 +124,7 @@ view address viewModel model =
         , Ui.Header.spacer
         , Ui.Header.icon
             { action = Just viewModel.optionsMsg
-            , glyph = text "android-options"
+            , glyph = Icons.options []
             , link = Nothing
             , target = ""
             , size = 32
@@ -134,17 +135,17 @@ view address viewModel model =
       []
       [ header
       , div
-          [ class "mt-dashboard-panel" ]
-          [ Ui.Container.column
-              []
-              [ monthIndicator
-              , div
-                  [ class "mt-dashboard-spending" ]
-                  [ text spending ]
-              , Ui.Fab.view (Ui.Icons.plus []) [ onClick viewModel.addMsg ]
-              , div [] breakdown
-              ]
+        [ class "dashboard" ]
+        [ Ui.Container.column
+          []
+          [ monthIndicator
+          , div
+            [ class "dashboard-spending" ]
+            [ text spending ]
+          , Ui.Fab.view (Ui.Icons.plus []) [ onClick viewModel.addMsg ]
+          , div [] breakdown
           ]
+        ]
       ]
 
 
@@ -174,10 +175,9 @@ renderCategory transactions category =
         ]
   in
     div
-      [ class "mt-dashboard-category" ]
-      [ table
-          []
-          (row :: (List.map renderTransaction categoryTransactions))
+      [ class "dashboard-category" ]
+      [ table []
+        (row :: (List.map renderTransaction categoryTransactions))
       ]
 
 

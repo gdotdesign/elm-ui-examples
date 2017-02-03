@@ -3,6 +3,7 @@ module Settings exposing (..)
 {-| Component for changing the settings, currently affix and prefix.
 -}
 
+import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Html exposing (div, text)
 
@@ -12,15 +13,15 @@ import Ui.Input
 import Ui
 
 import Types exposing (Settings)
-
+import Icons
 
 {-| Representation of a settings component.
-  - **affix** - the input for the affix
   - **prefix** - the input for the prefix
+  - **affix** - the input for the affix
 -}
 type alias Model =
-  { affix : Ui.Input.Model
-  , prefix : Ui.Input.Model
+  { prefix : Ui.Input.Model
+  , affix : Ui.Input.Model
   }
 
 
@@ -35,8 +36,8 @@ type alias ViewModel msg =
 {-| Messages that a settings component receive.
 -}
 type Msg
-  = Affix Ui.Input.Msg
-  | Prefix Ui.Input.Msg
+  = Prefix Ui.Input.Msg
+  | Affix Ui.Input.Msg
 
 
 {-| Initializes a settings component.
@@ -55,21 +56,21 @@ init =
 {-| Updates a settings component.
 -}
 update : Msg -> Model -> ( Model, Cmd Msg )
-update action model =
-  case action of
-    Affix act ->
+update msg_ model =
+  case msg_ of
+    Affix msg ->
       let
-        ( affix, effect ) =
-          Ui.Input.update act model.affix
+        ( affix, cmd ) =
+          Ui.Input.update msg model.affix
       in
-        ( { model | affix = affix }, Cmd.map Affix effect )
+        ( { model | affix = affix }, Cmd.map Affix cmd )
 
-    Prefix act ->
+    Prefix msg ->
       let
-        ( prefix, effect ) =
-          Ui.Input.update act model.prefix
+        ( prefix, cmd ) =
+          Ui.Input.update msg model.prefix
       in
-        ( { model | prefix = prefix }, Cmd.map Prefix effect )
+        ( { model | prefix = prefix }, Cmd.map Prefix cmd )
 
 
 {-| Renders a settings component.
@@ -85,16 +86,16 @@ view address viewModel model =
 
     backIcon =
       Ui.Header.icon
-        { glyph = text "android-arrow-back"
-        , action = Just viewModel.backMsg
+        { action = Just viewModel.backMsg
+        , glyph = Icons.back []
         , link = Nothing
         , size = 32
         , target = ""
         }
   in
     Ui.Container.view
-      { align = "stretch"
-      , direction = "column"
+      { direction = "column"
+      , align = "stretch"
       , compact = True
       }
       []
@@ -103,20 +104,26 @@ view address viewModel model =
           , Ui.Header.title
             { text = "Settings"
             , action = Nothing
-            , target = ""
             , link = Nothing
+            , target = ""
             }
           ]
       , div
-          []
+          [ class "panel" ]
           [ Ui.Container.render
-              { align = "stretch"
-              , direction = "column"
+              { direction = "column"
+              , align = "stretch"
               , compact = False
               }
               []
-              [ div [] [ text "Currency Affix", affix ]
-              , div [] [ text "Currency Prefix", prefix ]
+              [ div [ class "field" ]
+                [ div [ class "field-label" ] [ text "Currency affix" ]
+                , affix
+                ]
+              , div [ class "field" ]
+                [ div [ class "field-label" ] [ text "Currency prefix" ]
+                , prefix
+                ]
               ]
           ]
       ]
