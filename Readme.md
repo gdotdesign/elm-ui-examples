@@ -8,15 +8,13 @@ This repository contains example applications that demonstrate how to use Elm-UI
   a server
 * [Image Preview](./image-preview) - A sample app to demonstrate the usage of
   the Ui.Native.FileManager module
-* [Money Tracker](./money-tracker) - An _mobile app_ to track spending
+* [Money Tracker](./money-tracker) - An simple app to track spending
 * [Scroll to Top](./scroll-to-top) - A sample app to demonstrate the scroll
   package
-* [Video Library](./video-library) - An single page app to manage videos in
-  folders
 
 ## Running an example
 After cloning the repository you can run each application with the following
-steps (Yarn must be installed):
+steps ([yarn](https://yarnpkg.com) must be installed):
 
 * `cd example`
 * `yarn`
