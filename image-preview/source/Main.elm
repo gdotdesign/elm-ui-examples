@@ -1,21 +1,17 @@
-module Main exposing (..)
-
 {-| This is an example showing how to load and display images in Elm-UI.
 -}
-
 import Numeral exposing (format)
 import Json.Decode as Json
 import Task exposing (Task)
 
 import Html exposing (div, node, span, strong, text, img)
-import Html.Attributes exposing (src, class)
+import Html.Attributes exposing (src, class, href, rel)
 import Html.Events exposing (on)
-import Html.App
 
 import Ui.Native.FileManager as FileManager exposing (File)
 import Ui.Container
+import Ui.Layout
 import Ui.Button
-import Ui.App
 import Ui
 
 
@@ -23,13 +19,11 @@ import Ui
   - **dataURI** - This holds the current image as a dataURI
   - **image** - This holds the current image as a file
   - **size** - This holds the image size
-  - **app** - The base app component
 -}
 type alias Model =
   { dataURI : Maybe String
   , size : ( Int, Int )
   , image : Maybe File
-  , app : Ui.App.Model
   }
 
 
@@ -37,22 +31,22 @@ type alias Model =
 -}
 type Msg
   = UpdateSize ( Int, Int )
-  | App Ui.App.Msg
+  | Open (Task Never File)
   | Opened File
   | Read String
-  | Open (Task Never File)
   | NoOp
 
 
 {-| Initializes an image viewer.
 -}
-init : Model
+init : ( Model, Cmd Msg )
 init =
-  { app = Ui.App.init
-  , dataURI = Nothing
-  , image = Nothing
-  , size = ( 0, 0 )
-  }
+  ( { dataURI = Nothing
+    , image = Nothing
+    , size = ( 0, 0 )
+    }
+  , Cmd.none
+  )
 
 
 {-| Updates an image viewer.
@@ -60,14 +54,6 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
-    -- App Updates
-    App act ->
-      let
-        ( app, effect ) =
-          Ui.App.update act model.app
-      in
-        ( { model | app = app }, Cmd.map App effect )
-
     -- Save the dataURI after reading it
     Read dataURI ->
       ( { model | dataURI = Just dataURI }, Cmd.none )
@@ -80,9 +66,7 @@ update msg model =
     Opened image ->
       let
         cmd =
-          Task.perform (\_ -> Debug.crash "")
-            Read
-            (FileManager.readAsDataURL image)
+          Task.perform Read (FileManager.readAsDataURL image)
       in
         ( { model | image = Just image }, cmd )
 
@@ -90,7 +74,7 @@ update msg model =
     Open task ->
       let
         cmd =
-          Task.perform (\_ -> Debug.crash "") Opened task
+          Task.perform Opened task
       in
         ( model, cmd )
 
@@ -107,29 +91,32 @@ view model =
       Maybe.map (\_ -> "has-image") model.image
         |> Maybe.withDefault ""
   in
-    Ui.App.view App
-      model.app
-      [ node "image-preview"
-          [ class hasImage ]
-          [ node "image-preview-header"
-              []
-              [ renderHeader
-              , node "span"
-                [ on "click" (FileManager.openSingleDecoder "image/*" Open) ]
-                [ Ui.Button.primaryBig "Load Image" NoOp
-                ]
-              ]
-          , node "image-preview-content" [] [ renderImage model ]
-          , node "image-preview-info" [] (renderInfo model)
+    node "image-preview"
+      [ class hasImage ]
+      [ node "link" [ rel "stylesheet", href "style.css" ] []
+      , node "image-preview-header" []
+        [ renderHeader
+        , node "span"
+          [ on "click" (FileManager.openSingleDecoder "image/*" Open) ]
+          [ Ui.Button.view NoOp
+            { disabled = False
+            , readonly = False
+            , text = "Load Image"
+            , kind = "primary"
+            , size = "big"
+            }
           ]
-      ]
+        ]
+    , node "image-preview-content" [] [ renderImage model ]
+    , node "image-preview-info" [] (renderInfo model)
+    ]
 
 
 {-| Decodes an images size.
 -}
 decodeImageSize : Json.Decoder ( Int, Int )
 decodeImageSize =
-  Json.object2 (,)
+  Json.map2 (,)
     (Json.at [ "target", "naturalWidth" ] Json.int)
     (Json.at [ "target", "naturalHeight" ] Json.int)
 
@@ -139,10 +126,10 @@ decodeImageSize =
 renderHeader : Html.Html Msg
 renderHeader =
   div []
-    [ node "h1" [] [ text "Image Preview" ]
-    , node "p"
-        []
-        [ text "This is an example on how to load and read files in Elm-UI" ]
+    [ node "h1" []
+      [ text "Image Preview" ]
+    , node "p" []
+      [ text "This is an example on how to load and read files in Elm-UI" ]
     ]
 
 
@@ -154,14 +141,14 @@ renderInfo model =
     Just image ->
       let
         dimensions =
-          (toString (fst model.size))
+          ( toString (Tuple.first model.size))
             ++ "px x "
-            ++ (toString (snd model.size)
-                  ++ "px"
-               )
+            ++ (toString (Tuple.second model.size)
+            ++ "px"
+          )
       in
         [ text
-            ("File name: "
+            ( "File name: "
               ++ image.name
               ++ "  /  Size: "
               ++ (format "0.0b" image.size)
@@ -186,12 +173,11 @@ renderImage model =
       node "span" [] [ text "No image is loaded!" ]
 
 
-{-| Main entry point.
--}
+main : Program Never Model Msg
 main =
-  Html.App.program
-    { init = ( init, Cmd.none )
-    , view = view
+  Html.program
+    { subscriptions = \_ -> Sub.none
     , update = update
-    , subscriptions = \_ -> Sub.none
+    , view = view
+    , init = init
     }
