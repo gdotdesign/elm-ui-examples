@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "summary": "Money Tracker example for Elm-UI.",
+  "summary": "Money Tracker example for Elm-UI",
   "repository": "https://github.com/gdotdesign/elm-ui-examples.git",
   "license": "BSD3",
   "source-directories": [
@@ -8,14 +8,25 @@
   ],
   "exposed-modules": [],
   "dependencies": {
-    "ccapndave/elm-update-extra": "2.1.0 <= v < 3.0.0",
-    "elm-community/json-extra": "1.0.0 <= v < 2.0.0",
-    "elm-community/list-extra": "3.1.0 <= v < 4.0.0",
+    "ccapndave/elm-update-extra": "2.3.1 <= v < 3.0.0",
+    "elm-community/json-extra": "2.1.0 <= v < 3.0.0",
+    "elm-community/list-extra": "4.0.0 <= v < 5.0.0",
     "rluiten/elm-date-extra": "8.0.0 <= v < 9.0.0",
-    "gdotdesign/elm-ui": "0.3.0 <= v < 1.0.0",
+    "gdotdesign/elm-storage": "1.0.0 <= v < 2.0.0",
+    "gdotdesign/elm-ui": "1.0.0 <= v < 2.0.0",
     "ggb/numeral-elm": "1.2.1 <= v < 2.0.0",
-    "elm-lang/html": "1.1.0 <= v < 2.0.0",
-    "elm-lang/core": "4.0.5 <= v < 5.0.0"
+    "elm-lang/core": "5.0.0 <= v < 6.0.0",
+    "elm-lang/html": "2.0.0 <= v < 3.0.0"
+  },
+  "dependency-sources": {
+    "gdotdesign/elm-ui": {
+      "url": "git@github.com:gdotdesign/elm-ui",
+      "ref": "e935e122e65cc23e0d1e7626510e23a09eb6875c"
+    },
+    "gdotdesign/elm-storage": {
+      "url": "git@github.com:gdotdesign/elm-storage",
+      "ref": "master"
+    }
   },
   "elm-version": "0.17.0 <= v < 0.18.0"
 }

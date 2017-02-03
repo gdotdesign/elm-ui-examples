@@ -17,10 +17,11 @@ import Date
 import Html exposing (div, text, table, tr, td)
 import Html.Attributes exposing (style, class)
 import Html.Events exposing (onClick)
-import Html.App
 
 import Ui.Container
 import Ui.Header
+import Ui.Icons
+import Ui.Fab
 import Ui
 
 import Types exposing (..)
@@ -103,11 +104,11 @@ view address viewModel model =
     monthIndicator =
       Ui.Container.row
         []
-        [ Ui.icon "chevron-left" True [ onClick (address PreviousDate) ]
+        [ Ui.Icons.chevronLeft [ onClick (address PreviousDate) ]
         , div
             [ class "mt-dashboard-month"]
             [ text month ]
-        , Ui.icon "chevron-right" True [ onClick (address NextDate) ]
+        , Ui.Icons.chevronRight [ onClick (address NextDate) ]
         ]
 
     {- Header -}
@@ -119,20 +120,20 @@ view address viewModel model =
           , link = Nothing
           , target = ""
           }
-        , Ui.spacer
+        , Ui.Header.spacer
         , Ui.Header.icon
-            { glyph = "android-options"
-            , action = Just viewModel.optionsMsg
+            { action = Just viewModel.optionsMsg
+            , glyph = text "android-options"
+            , link = Nothing
             , target = ""
             , size = 32
-            , link = Nothing
             }
         ]
   in
     Ui.Container.column
       []
       [ header
-      , Ui.panel
+      , div
           [ class "mt-dashboard-panel" ]
           [ Ui.Container.column
               []
@@ -140,7 +141,7 @@ view address viewModel model =
               , div
                   [ class "mt-dashboard-spending" ]
                   [ text spending ]
-              , Ui.fab "plus" [ onClick viewModel.addMsg ]
+              , Ui.Fab.view (Ui.Icons.plus []) [ onClick viewModel.addMsg ]
               , div [] breakdown
               ]
           ]

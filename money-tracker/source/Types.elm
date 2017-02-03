@@ -2,7 +2,7 @@ module Types exposing (..)
 
 {-| Types that are used along the application.
 -}
-import Json.Decode as Json exposing ((:=))
+import Json.Decode as Json exposing (field)
 import Json.Decode.Extra as JsonExtra
 import Json.Encode as J
 
@@ -35,14 +35,14 @@ type alias Transaction =
 -}
 decodeTransaction : Json.Decoder Transaction
 decodeTransaction =
-  Json.object6
+  Json.map6
     Transaction
-    ("id" := Json.string)
-    ("amount" := Json.int)
-    ("comment" := Json.string)
-    ("categoryId" := Json.string)
-    ("accountId" := Json.string)
-    ("date" := JsonExtra.date)
+    (field "id" Json.string)
+    (field "amount" Json.int)
+    (field "comment" Json.string)
+    (field "categoryId" Json.string)
+    (field "accountId" Json.string)
+    (field "date" JsonExtra.date)
 
 
 {-| Encodes a transaction record.
@@ -72,11 +72,11 @@ type alias Category =
 -}
 decodeCategory : Json.Decoder Category
 decodeCategory =
-  Json.object3
+  Json.map3
     Category
-    ("icon" := Json.string)
-    ("name" := Json.string)
-    ("id" := Json.string)
+    (field "icon" Json.string)
+    (field "name" Json.string)
+    (field "id" Json.string)
 
 
 {-| Encodes a category record.
@@ -104,12 +104,12 @@ type alias Account =
 -}
 decodeAccount : Json.Decoder Account
 decodeAccount =
-  Json.object4
+  Json.map4
     Account
-    ("initialBalance" := Json.int)
-    ("name" := Json.string)
-    ("icon" := Json.string)
-    ("id" := Json.string)
+    (field "initialBalance" Json.int)
+    (field "name" Json.string)
+    (field "icon" Json.string)
+    (field "id" Json.string)
 
 
 {-| Encodes an account record.
@@ -146,10 +146,10 @@ type alias Settings =
 -}
 decodeSettings : Json.Decoder Settings
 decodeSettings =
-  Json.object2
+  Json.map2
     Settings
-    ("prefix" := Json.string)
-    ("affix" := Json.string)
+    (field "prefix" Json.string)
+    (field "affix" Json.string)
 
 
 {-| Encodes a settings record.
@@ -166,12 +166,12 @@ encodeSettings settings =
 -}
 decodeStore : Json.Decoder Store
 decodeStore =
-  Json.object4
+  Json.map4
     Store
-    ("transactions" := Json.list decodeTransaction)
-    ("categories" := Json.list decodeCategory)
-    ("accounts" := Json.list decodeAccount)
-    ("settings" := decodeSettings)
+    (field "transactions" (Json.list decodeTransaction))
+    (field "categories" (Json.list decodeCategory))
+    (field "accounts" (Json.list decodeAccount))
+    (field "settings" decodeSettings)
 
 
 {-| Encodes a store-

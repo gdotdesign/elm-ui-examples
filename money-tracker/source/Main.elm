@@ -7,21 +7,21 @@ import Task
 import Date
 
 import Html.Attributes exposing (classList)
-import Html.Events.Extra exposing (onStop)
 import Html exposing (div, text, node)
-import Html.Events exposing (onClick)
-import Html.App
+import Html.Events exposing (onClick, onMouseDown)
 
 import Json.Decode as Json
 import Json.Encode
 
 
-import Ui.Native.LocalStorage as LocalStorage
 import Ui.Native.Uid as Uid
 import Ui.Container
 import Ui.Pager
-import Ui.App
+import Ui.Icons
 import Ui
+
+import Storage.Local
+import Storage.Error
 
 import Types as Types exposing (..)
 import Dashboard as Dashboard
@@ -34,12 +34,11 @@ type Msg
   | Settings Settings.Msg
   | Pager Ui.Pager.Msg
   | Form Form.Msg
-  | App Ui.App.Msg
   | SelectPage Int
   | Error String
-  | Load String
+  | Loaded (Result Storage.Error.Error (Maybe String))
+  | Saved (Result Storage.Error.Error ())
   | SaveStore
-  | Saved
   | Save
   | NoOp
 
@@ -50,7 +49,6 @@ type alias Model =
   { dashboard : Dashboard.Model
   , settings : Settings.Model
   , pager : Ui.Pager.Model
-  , app : Ui.App.Model
   , form : Form.Model
   , store : Store
   }
@@ -81,10 +79,9 @@ init =
       ]
 
     model =
-      { app = Ui.App.init
-      , dashboard = Dashboard.init
+      { dashboard = Dashboard.init
       , settings = Settings.init
-      , pager = Ui.Pager.init 0
+      , pager = Ui.Pager.init ()
       , form = Form.init
       , store =
           { settings = { prefix = "", affix = "" }
@@ -94,7 +91,7 @@ init =
           }
       }
   in
-    ( model, Task.perform Error Load (LocalStorage.getItem "moneytrack-data") )
+    ( model, Task.attempt Loaded (Storage.Local.get "moneytrack-data") )
 
 
 {-| Updates a money tracker.
@@ -124,13 +121,6 @@ update msg model =
         ( updateSettings { model | settings = settings }
         , Cmd.map Settings effect
         )
-
-    App act ->
-      let
-        ( app, effect ) =
-          Ui.App.update act model.app
-      in
-        ( { model | app = app }, Cmd.map App effect )
 
     {- Updates -}
     SelectPage page ->
@@ -181,27 +171,37 @@ update msg model =
           :> update SaveStore
 
     {- Persistence -}
-    Load data ->
-      let
-        store =
-          case Json.decodeString decodeStore data of
-            Ok decodedStore ->
+    Loaded result ->
+      case result of
+        Ok maybeData ->
+          case maybeData of
+            Just data ->
               let
-                _ =
-                  log "Info" "Loaded store from local storage."
-              in
-                decodedStore
+                store =
+                  case Json.decodeString decodeStore data of
+                    Ok decodedStore ->
+                      let
+                        _ =
+                          log "Info" "Loaded store from local storage."
+                      in
+                        decodedStore
 
-            Err message ->
-              let
-                _ =
-                  log "Error decoding store:" message
+                    Err message ->
+                      let
+                        _ =
+                          log "Error decoding store:" message
+                      in
+                        model.store
               in
-                model.store
-      in
-        ( populateSettings { model | store = store }, Cmd.none )
+                populateSettings { model | store = store }
 
-    Saved ->
+            Nothing ->
+              ( model, Cmd.none )
+
+        Err _ ->
+          ( model, Cmd.none )
+
+    Saved _ ->
       let
         _ =
           log "Info" "Store saved in local storage."
@@ -211,11 +211,11 @@ update msg model =
     SaveStore ->
       let
         task =
-          LocalStorage.setItem
+          Storage.Local.set
             "moneytrack-data"
             (Json.Encode.encode 0 (encodeStore model.store))
       in
-        ( model, Task.perform Error (\_ -> Saved) task )
+        ( model, Task.attempt Saved task )
 
     Error message ->
       let
@@ -255,10 +255,10 @@ view model =
     form =
       let
         bottomLeft =
-          div [ onStop "mousedown" (SelectPage 0) ] [ Ui.icon "close" False [] ]
+          div [ onMouseDown (SelectPage 0) ] [ Ui.Icons.close [] ]
 
         bottomRight =
-          div [ onStop "mousedown" Save ] [ Ui.icon "checkmark" False [] ]
+          div [ onMouseDown Save ] [ Ui.Icons.checkmark [] ]
 
         viewModel =
           { bottomRight = bottomRight
@@ -268,19 +268,17 @@ view model =
       in
         Form.view Form viewModel model.form
   in
-    Ui.App.view
-      App
-      model.app
-      [ div
-          [ classList [ ( "money-track", True ) ] ]
-          [ Ui.Pager.view
-              Pager
-              [ dashboard
-              , form
-              , settings
-              ]
-              model.pager
-          ]
+    div
+      [ classList [ ( "money-track", True ) ] ]
+      [ Ui.Pager.view
+          { pages =
+            [ dashboard
+            , form
+            , settings
+            ]
+          , address = Pager
+          }
+          model.pager
       ]
 
 
@@ -293,9 +291,13 @@ populateForm amount date model =
 
 {-| Populates the settings component from the store.
 -}
-populateSettings : Model -> Model
+populateSettings : Model -> ( Model, Cmd Msg )
 populateSettings model =
-  { model | settings = Settings.populate model.store.settings model.settings }
+  let
+    ( settings, cmd ) =
+      Settings.populate model.store.settings model.settings
+  in
+    ( { model | settings = settings }, Cmd.map Settings cmd )
 
 
 {-| Updates settings object from the settings component.
@@ -317,9 +319,9 @@ gatherSubs model =
   Sub.batch [ Sub.map Form (Form.subscriptions model.form) ]
 
 
-main : Program Never
+main : Program Never Model Msg
 main =
-  Html.App.program
+  Html.program
     { init = init
     , view = view
     , update = update

@@ -4,8 +4,7 @@ module Settings exposing (..)
 -}
 
 import Html.Events exposing (onClick)
-import Html exposing (text)
-import Html.App
+import Html exposing (div, text)
 
 import Ui.Container
 import Ui.Header
@@ -44,8 +43,12 @@ type Msg
 -}
 init : Model
 init =
-  { affix = Ui.Input.init "" "Affix..."
-  , prefix = Ui.Input.init "" "Prefix..."
+  { affix =
+      Ui.Input.init ()
+        |> Ui.Input.placeholder "Affix..."
+  , prefix =
+      Ui.Input.init ()
+        |> Ui.Input.placeholder "Prefix..."
   }
 
 
@@ -75,14 +78,14 @@ view : (Msg -> msg) -> ViewModel msg -> Model -> Html.Html msg
 view address viewModel model =
   let
     affix =
-      Html.App.map (address << Affix) (Ui.Input.view model.affix)
+      Html.map (address << Affix) (Ui.Input.view model.affix)
 
     prefix =
-      Html.App.map (address << Prefix) (Ui.Input.view model.prefix)
+      Html.map (address << Prefix) (Ui.Input.view model.prefix)
 
     backIcon =
       Ui.Header.icon
-        { glyph = "android-arrow-back"
+        { glyph = text "android-arrow-back"
         , action = Just viewModel.backMsg
         , link = Nothing
         , size = 32
@@ -104,7 +107,7 @@ view address viewModel model =
             , link = Nothing
             }
           ]
-      , Ui.panel
+      , div
           []
           [ Ui.Container.render
               { align = "stretch"
@@ -112,8 +115,8 @@ view address viewModel model =
               , compact = False
               }
               []
-              [ Ui.inputGroup "Currency Affix" affix
-              , Ui.inputGroup "Currency Prefix" prefix
+              [ div [] [ text "Currency Affix", affix ]
+              , div [] [ text "Currency Prefix", prefix ]
               ]
           ]
       ]
@@ -121,9 +124,18 @@ view address viewModel model =
 
 {-| Populates the model from the given settings.
 -}
-populate : Settings -> Model -> Model
+populate : Settings -> Model -> ( Model, Cmd Msg)
 populate settings model =
-  { model
-    | affix = Ui.Input.setValue settings.affix model.affix
-    , prefix = Ui.Input.setValue settings.prefix model.prefix
-  }
+  let
+    ( affix, affixCmd ) =
+      Ui.Input.setValue settings.affix model.affix
+
+    ( prefix, prefixCmd ) =
+      Ui.Input.setValue settings.prefix model.prefix
+  in
+    ( { model | affix = affix, prefix = prefix }
+    , Cmd.batch
+      [ Cmd.map Affix affixCmd
+      , Cmd.map Prefix prefixCmd
+      ]
+    )

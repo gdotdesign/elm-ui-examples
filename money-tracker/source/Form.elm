@@ -9,8 +9,7 @@ import Date
 
 import Html.Attributes exposing (classList)
 import Html.Events exposing (onClick)
-import Html exposing (text)
-import Html.App
+import Html exposing (div, text)
 
 import Ui.NumberPad
 import Ui.Chooser
@@ -81,18 +80,21 @@ init : Model
 init =
   let
     datePicker =
-      Ui.DatePicker.init (Ext.Date.now ())
+      Ui.DatePicker.init ()
+        |> Ui.DatePicker.setValue (Ext.Date.now ())
 
     accountChooser =
-      Ui.Chooser.init [] "Account..." ""
+      Ui.Chooser.init ()
+        |> Ui.Chooser.placeholder "Account..."
 
     categoryChooser =
-      Ui.Chooser.init [] "Category..." ""
+      Ui.Chooser.init ()
+        |> Ui.Chooser.placeholder "Category..."
   in
     { categoryChooser = { categoryChooser | closeOnSelect = True }
     , accountChooser = { accountChooser | closeOnSelect = True }
     , datePicker = { datePicker | closeOnSelect = True }
-    , numberPad = Ui.NumberPad.init 0
+    , numberPad = Ui.NumberPad.init ()
     }
 
 
@@ -102,7 +104,7 @@ populate : Store -> Int -> Date.Date -> Model -> Model
 populate store amount date model =
   let
     mapItem item =
-      { value = item.id, label = item.name }
+      { id = item.id, value = item.id, label = item.name }
 
     categories =
       List.map mapItem store.categories
@@ -120,7 +122,7 @@ populate store amount date model =
           chooser
 
         _ ->
-          fst (Ui.Chooser.selectFirst chooser)
+          Tuple.first (Ui.Chooser.selectFirst chooser)
 
     numberPad =
       Ui.NumberPad.setValue amount model.numberPad
@@ -150,22 +152,22 @@ buildData account category amount model =
 data : Store -> Model -> Maybe Data
 data store model =
   let
-    find id' list =
-      Maybe.andThen id' (\id -> List.Extra.find (\item -> item.id == id) list)
+    find id_ list =
+      Maybe.andThen (\id -> List.Extra.find (\item -> item.id == id) list) id_
 
-    account' =
+    account =
       find (Ui.Chooser.getFirstSelected model.accountChooser) store.accounts
 
-    category' =
+    category =
       find (Ui.Chooser.getFirstSelected model.categoryChooser) store.categories
 
-    amount' =
+    amount =
       if model.numberPad.value == 0 then
         Nothing
       else
         Just model.numberPad.value
   in
-    Maybe.map4 buildData account' category' amount' (Just model)
+    Maybe.map4 buildData account category amount (Just model)
 
 
 {-| Updates a form.
@@ -216,17 +218,17 @@ view : (Msg -> msg) -> ViewModel msg -> Model -> Html.Html msg
 view address viewModel model =
   let
     datePicker =
-      Html.App.map
+      Html.map
         (address << DatePicker)
         (Ui.DatePicker.view "en_us" model.datePicker)
 
     accountChooser =
-      Html.App.map
+      Html.map
         (address << AccountChooser)
         (Ui.Chooser.view model.accountChooser)
 
     categoryChooser =
-      Html.App.map
+      Html.map
         (address << CategoryChooser)
         (Ui.Chooser.view model.categoryChooser)
   in
@@ -238,7 +240,7 @@ view address viewModel model =
       []
       [ Ui.Header.view
           [ Ui.Header.icon
-              { glyph = "android-arrow-back"
+              { glyph = text "android-arrow-back"
               , action = Just viewModel.backMsg
               , link = Nothing
               , target = ""
@@ -251,7 +253,7 @@ view address viewModel model =
             , link = Nothing
             }
           ]
-      , Ui.panel
+      , div
           [ classList [ ( "money-track-form", True ) ] ]
           [ Ui.Container.view
               { align = "stretch"
@@ -259,14 +261,14 @@ view address viewModel model =
               , compact = False
               }
               []
-              [ Ui.inputGroup "Date" datePicker
-              , Ui.inputGroup "Account" accountChooser
-              , Ui.inputGroup "Category" categoryChooser
+              [ div [] [ text "Date", datePicker ]
+              , div [] [ text "Account", accountChooser ]
+              , div [] [ text "Category", categoryChooser ]
               , Ui.NumberPad.view
                   { bottomLeft = viewModel.bottomLeft
                   , bottomRight = viewModel.bottomRight
+                  , address = (address << NumberPad)
                   }
-                  (address << NumberPad)
                   model.numberPad
               ]
           ]
