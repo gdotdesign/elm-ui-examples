@@ -1,0 +1,20 @@
+body {
+  font-family: sans;
+  margin: 20px;
+}
+
+div > span:first-of-type {
+  padding-right: 15px;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid #DDD;
+}
+
+p {
+  border-bottom: 1px solid #DDD;
+  word-break: break-word;
+  padding-bottom: 15px;
+  margin: 15px 0;
+}

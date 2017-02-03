@@ -1,5 +1,3 @@
-module Main exposing (..)
-
 {-| This is an example how to implement a simple drag and drop functionanily
 with Ui.Helpers.Drag.
 -}

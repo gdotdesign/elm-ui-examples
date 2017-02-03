@@ -1,5 +1,3 @@
-module Main exposing (..)
-
 {-| This example shows how to implement a simple dropdown using
 Ui.Helpers.Dropdown.
 -}
