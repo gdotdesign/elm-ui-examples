@@ -1,0 +1,135 @@
+body {
+  justify-content: center;
+  align-items: center;
+  font-family: sans;
+  display: flex;
+  height: 100vh;
+  color: #444;
+}
+
+.panel {
+  padding: 30px;
+  flex: 1;
+}
+
+.field {
+  display: flex;
+}
+
+.field-label {
+  margin-right: 10px;
+  line-height: 36px;
+  flex: 0 0 140px;
+}
+
+.field ui-input,
+.field ui-picker,
+.field ui-chooser {
+  flex: 1;
+}
+
+.form {
+  display: flex;
+  padding: 30px;
+  flex: 1;
+}
+
+.form > ui-container {
+  flex: 1;
+}
+
+ui-number-pad {
+  flex: 1;
+}
+
+ui-pager {
+  height: 100vh;
+  width: 100vw;
+}
+
+[style-id] ui-page {
+  transform: none;
+}
+
+ui-chooser ui-dropdown-panel {
+  min-width: 300px;
+}
+
+ui-number-pad-button div {
+  justify-content: center;
+  align-self: stretch;
+  align-items: center;
+  display: flex;
+  flex: 1;
+}
+
+ui-number-pad-button div svg {
+  pointer-events: none;
+  fill: currentColor;
+  height: 20px;
+  width: 20px;
+}
+
+.dashboard {
+  padding: 30px;
+  flex: 1;
+}
+
+.dashboard svg {
+  color: currentColor;
+  height: 20px;
+  width: 20px;
+}
+
+.dashboard svg:hover {
+  cursor: pointer;
+  fill: #00C0FF;
+}
+
+.dashboard-month {
+  text-align: center;
+  line-height: 20px;
+  font-size: 18px;
+  flex: 1;
+}
+
+.dashboard-spending {
+  text-align: center;
+  padding: 40px 0;
+  font-size: 40px;
+}
+
+.dashboard-category + .dashboard-category {
+  margin-top: 10px;
+}
+
+.dashboard-category table {
+  border: 1px solid #DDD;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.dashboard-category tr:first-child {
+  font-weight: bold;
+  background: #EEE;
+}
+
+.dashboard-category td {
+  border: 1px solid #DDD;
+  padding: 5px;
+}
+
+.dashboard-category td:last-child {
+  text-align: center;
+  width: 100px;
+}
+
+@media (min-width: 550px) {
+  ui-pager {
+    box-sizing: content-box;
+    border: 2px solid #DDD;
+    max-height: 700px;
+    max-width: 550px;
+  }
+}
+
