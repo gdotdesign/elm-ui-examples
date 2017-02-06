@@ -25,7 +25,7 @@ type Msg
 
 {-| Initialize our dropdown.
 -}
-init : Model
+init : ( Model, Cmd Msg )
 init =
   ( { dropdown = Dropdown.init
     , uid = "my-dropdown"
