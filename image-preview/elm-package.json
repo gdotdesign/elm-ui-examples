@@ -13,11 +13,5 @@
     "elm-lang/core": "5.0.0 <= v < 6.0.0",
     "elm-lang/html": "2.0.0 <= v < 3.0.0"
   },
-  "dependency-sources": {
-    "gdotdesign/elm-ui": {
-      "url": "git@github.com:gdotdesign/elm-ui",
-      "ref": "e935e122e65cc23e0d1e7626510e23a09eb6875c"
-    }
-  },
   "elm-version": "0.17.0 <= v < 0.18.0"
 }
