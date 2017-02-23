@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "summary": "File upload example with progress indicator for Elm-UI",
+  "repository": "https://github.com/gdotdesign/elm-ui-examples.git",
+  "license": "BSD3",
+  "source-directories": [
+    "source"
+  ],
+  "exposed-modules": [],
+  "dependencies": {
+    "gdotdesign/elm-ui": "1.0.0 <= v < 2.0.0",
+    "gdotdesign/http": "1.0.1 <= v < 2.0.0",
+    "elm-lang/core": "5.0.0 <= v < 6.0.0",
+    "elm-lang/html": "2.0.0 <= v < 3.0.0"
+  },
+  "elm-version": "0.17.0 <= v < 0.18.0"
+}
