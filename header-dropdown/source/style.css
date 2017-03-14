@@ -1,0 +1,19 @@
+ui-header ui-dropdown-menu {
+  display: flex !important;
+  justify-content: center;
+  align-self: stretch;
+}
+
+ui-header ui-dropdown-menu ui-header-icon {
+  display: flex;
+}
+
+ui-dropdown-menu-item {
+  align-items: center;
+}
+
+ui-dropdown-menu-item svg {
+  height: 14px !important;
+  width: 14px !important;
+  margin-right: 7px;
+}

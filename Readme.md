@@ -8,6 +8,8 @@ This repository contains example applications that demonstrate how to use Elm-UI
   a server
 * [File Upload Progress](./file-upload-progress) - A sample app to show how to upload files to
   a server and display it's progress
+* [Header Dropdown](./header-dropdown) - A sample app to show how to integrate
+  a drop-down into a header
 * [Image Preview](./image-preview) - A sample app to demonstrate the usage of
   the Ui.Native.FileManager module
 * [Money Tracker](./money-tracker) - An simple app to track spending
