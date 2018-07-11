@@ -124,7 +124,7 @@ view : Model -> Html.Html Msg
 view model =
   case model.progress of
     Some { bytes, bytesExpected } ->
-      text ("Uloading: " ++ (toString bytes) ++ " of " ++ (toString bytesExpected))
+      text ("Uploading: " ++ (toString bytes) ++ " of " ++ (toString bytesExpected))
 
     Fail error ->
       text (toString error)
